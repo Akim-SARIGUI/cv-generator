@@ -1,0 +1,5 @@
+@use 'vuetify/settings' with (
+  $body-font-family: ('DM Sans', system-ui, sans-serif),
+  $heading-font-family: ('Fraunces', Georgia, serif),
+  $border-radius-root: 12px
+);
