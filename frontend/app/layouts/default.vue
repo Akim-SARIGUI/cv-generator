@@ -6,15 +6,16 @@
           CV Studio
         </NuxtLink>
         <v-spacer />
+        <CvLocaleSwitch class="me-3" compact />
         <template v-if="isAuthenticated">
-          <v-btn variant="text" to="/editor" class="me-1">Éditeur</v-btn>
-          <v-btn variant="text" to="/preview" class="me-2">Aperçu</v-btn>
+          <v-btn variant="text" to="/editor" class="me-1">{{ t('navEditor') }}</v-btn>
+          <v-btn variant="text" to="/preview" class="me-2">{{ t('navPreview') }}</v-btn>
           <span class="text-sm text-muted me-3 hidden sm:inline">{{ user?.username }}</span>
-          <v-btn color="primary" variant="tonal" @click="logout">Déconnexion</v-btn>
+          <v-btn color="primary" variant="tonal" @click="logout">{{ t('navLogout') }}</v-btn>
         </template>
         <template v-else>
-          <v-btn variant="text" to="/auth/login" class="me-2">Connexion</v-btn>
-          <v-btn color="primary" to="/auth/register">Créer un compte</v-btn>
+          <v-btn variant="text" to="/auth/login" class="me-2">{{ t('navLogin') }}</v-btn>
+          <v-btn color="primary" to="/auth/register">{{ t('navRegister') }}</v-btn>
         </template>
       </v-container>
     </v-app-bar>
@@ -27,4 +28,5 @@
 
 <script setup lang="ts">
 const { user, isAuthenticated, logout } = useAuth()
+const { t } = useUiI18n()
 </script>

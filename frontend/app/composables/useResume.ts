@@ -293,16 +293,28 @@ export function useResume() {
     }
   }
 
-  async function downloadPdf() {
+  async function downloadPdf(localeOverride?: string) {
     if (!resume.value) return
+    const locale =
+      localeOverride === 'en' || localeOverride === 'fr'
+        ? localeOverride
+        : resume.value.locale
+    if (locale && locale !== resume.value.locale) {
+      await updateResume({ locale })
+    }
     const blob = await api<Blob>(
       `/resumes/${resume.value.id}/generate/pdf`,
-      { method: 'POST', responseType: 'blob' },
+      {
+        method: 'POST',
+        body: { locale },
+        responseType: 'blob',
+      },
     )
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${resume.value.personal?.fullName || 'cv'}.pdf`
+    const suffix = locale === 'en' ? '-en' : '-fr'
+    a.download = `${resume.value.personal?.fullName || 'cv'}${suffix}.pdf`
     a.click()
     URL.revokeObjectURL(url)
   }

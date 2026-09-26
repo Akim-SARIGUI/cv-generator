@@ -69,7 +69,7 @@ export class ResumesService {
       data: {
         userId,
         title: dto.title,
-        template: dto.template === 'classic' ? 'eu' : (dto.template ?? 'eu'),
+        template: dto.template ?? 'classic-navy',
         locale: dto.locale ?? 'fr',
         isDefault: false,
         personal: {
@@ -97,8 +97,7 @@ export class ResumesService {
       where: { id: resumeId },
       data: {
         title: dto.title,
-        template:
-          dto.template === 'classic' ? 'eu' : dto.template,
+        template: dto.template,
         locale: dto.locale,
         isDefault: dto.isDefault,
         sections:

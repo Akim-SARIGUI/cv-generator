@@ -1,9 +1,7 @@
 <template>
   <v-card border class="pa-4 md:pa-6">
-    <h2 class="font-display text-xl mb-1">Structure du CV</h2>
-    <p class="text-sm text-muted mb-4">
-      Activez uniquement les blocs que vous voulez afficher. Les titres suivent la langue FR/EN.
-    </p>
+    <h2 class="font-display text-xl mb-1">{{ t('structureTitle') }}</h2>
+    <p class="text-sm text-muted mb-4">{{ t('structureHint') }}</p>
 
     <div class="grid gap-3 sm:grid-cols-2">
       <label
@@ -13,8 +11,12 @@
         :class="{ 'section-toggle--on': local[key] }"
       >
         <div class="flex-grow-1">
-          <p class="font-semibold text-sm">{{ SECTION_META[key].fr }}</p>
-          <p class="text-xs text-muted">{{ SECTION_META[key].hintFr }}</p>
+          <p class="font-semibold text-sm">
+            {{ locale === 'en' ? SECTION_META[key].en : SECTION_META[key].fr }}
+          </p>
+          <p class="text-xs text-muted">
+            {{ locale === 'en' ? SECTION_META[key].hintEn : SECTION_META[key].hintFr }}
+          </p>
         </div>
         <v-switch
           :model-value="local[key]"
@@ -38,6 +40,7 @@ import {
   type SectionsConfig,
 } from '~/utils/sections'
 
+const { t, locale } = useUiI18n()
 const { resume, updateResume, saving } = useResume()
 
 const local = reactive<SectionsConfig>({ ...DEFAULT_SECTIONS })

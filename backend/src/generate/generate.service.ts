@@ -33,16 +33,33 @@ export class GenerateService {
     private readonly translateService: TranslateService,
   ) {}
 
-  async getLocalizedResume(userId: string, resumeId: string) {
+  async getLocalizedResume(
+    userId: string,
+    resumeId: string,
+    localeOverride?: string,
+  ) {
     const resume = await this.loadResume(userId, resumeId);
-    return this.translateService.localizeResume(resume, resume.locale);
+    const locale =
+      localeOverride === 'en' || localeOverride === 'fr'
+        ? localeOverride
+        : resume.locale;
+    return this.translateService.localizeResume(resume, locale);
   }
 
-  async generatePdf(userId: string, resumeId: string, res: Response) {
+  async generatePdf(
+    userId: string,
+    resumeId: string,
+    res: Response,
+    localeOverride?: string,
+  ) {
     const resume = await this.loadResume(userId, resumeId);
+    const locale =
+      localeOverride === 'en' || localeOverride === 'fr'
+        ? localeOverride
+        : resume.locale;
     const data = (await this.translateService.localizeResume(
       resume,
-      resume.locale,
+      locale,
     )) as unknown as ResumePdfData;
 
     const personal = data.personal;

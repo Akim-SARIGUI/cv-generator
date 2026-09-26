@@ -2,13 +2,14 @@
   <div class="page-shell">
     <section class="grid gap-10 lg:grid-cols-2 lg:items-center min-h-[70vh]">
       <div class="space-y-6">
-        <p class="text-sm uppercase tracking-[0.2em] text-accent font-semibold">CV Studio</p>
+        <p class="text-sm uppercase tracking-[0.2em] text-accent font-semibold">
+          {{ t('homeEyebrow') }}
+        </p>
         <h1 class="font-display text-4xl md:text-5xl leading-tight text-ink">
-          Un CV clair, soigné, prêt à envoyer.
+          {{ t('homeTitle') }}
         </h1>
         <p class="text-lg text-muted max-w-xl">
-          Renseignez vos infos, prévisualisez en direct, téléchargez un PDF professionnel.
-          Sans friction, sans données fictives.
+          {{ t('homeSubtitle') }}
         </p>
         <div class="flex flex-wrap gap-3">
           <v-btn
@@ -16,7 +17,7 @@
             size="large"
             :to="isAuthenticated ? '/editor' : '/auth/register'"
           >
-            {{ isAuthenticated ? 'Continuer mon CV' : 'Commencer gratuitement' }}
+            {{ isAuthenticated ? t('homeCtaContinue') : t('homeCtaStart') }}
           </v-btn>
           <v-btn
             v-if="!isAuthenticated"
@@ -25,7 +26,7 @@
             size="large"
             to="/auth/login"
           >
-            Se connecter
+            {{ t('homeLogin') }}
           </v-btn>
         </div>
       </div>
@@ -33,21 +34,37 @@
       <div class="cv-paper rounded-2xl p-8 md:p-10 relative overflow-hidden">
         <div class="absolute inset-x-0 top-0 h-1.5 bg-accent" />
         <p class="font-display text-2xl text-ink mb-1">Alex Martin</p>
-        <p class="text-sm text-muted mb-6">Développeur fullstack · Paris</p>
+        <p class="text-sm text-muted mb-6">
+          {{ locale === 'en' ? 'Full-stack developer · Paris' : 'Développeur fullstack · Paris' }}
+        </p>
         <div class="space-y-4 text-sm">
           <div>
-            <p class="font-semibold text-primary mb-1">Profil</p>
+            <p class="font-semibold text-primary mb-1">
+              {{ locale === 'en' ? 'Profile' : 'Profil' }}
+            </p>
             <p class="text-muted">
-              Conception d’applications web robustes, UX soignée et livraisons régulières.
+              {{
+                locale === 'en'
+                  ? 'Building robust web apps with polished UX and steady delivery.'
+                  : 'Conception d’applications web robustes, UX soignée et livraisons régulières.'
+              }}
             </p>
           </div>
           <div>
-            <p class="font-semibold text-primary mb-1">Expérience</p>
-            <p class="font-medium">Ingénieur logiciel — NovaTech</p>
-            <p class="text-muted">2022 — Aujourd’hui</p>
+            <p class="font-semibold text-primary mb-1">
+              {{ locale === 'en' ? 'Experience' : 'Expérience' }}
+            </p>
+            <p class="font-medium">
+              {{ locale === 'en' ? 'Software engineer — NovaTech' : 'Ingénieur logiciel — NovaTech' }}
+            </p>
+            <p class="text-muted">
+              {{ locale === 'en' ? '2022 — Present' : '2022 — Aujourd’hui' }}
+            </p>
           </div>
           <div>
-            <p class="font-semibold text-primary mb-1">Compétences</p>
+            <p class="font-semibold text-primary mb-1">
+              {{ locale === 'en' ? 'Skills' : 'Compétences' }}
+            </p>
             <p class="text-muted">TypeScript · NestJS · Nuxt · PostgreSQL · Prisma</p>
           </div>
         </div>
@@ -70,22 +87,23 @@
 
 <script setup lang="ts">
 const { isAuthenticated } = useAuth()
+const { t, locale } = useUiI18n()
 
-const features = [
+const features = computed(() => [
   {
     icon: 'mdi-pencil-outline',
-    title: 'Édition guidée',
-    text: 'Sections claires : profil, expériences, formations et compétences.',
+    title: t('homeFeatEditTitle'),
+    text: t('homeFeatEditText'),
   },
   {
     icon: 'mdi-eye-outline',
-    title: 'Aperçu fidèle',
-    text: 'Visualisez le rendu avant export, avec vos vraies données.',
+    title: t('homeFeatPreviewTitle'),
+    text: t('homeFeatPreviewText'),
   },
   {
     icon: 'mdi-file-pdf-box',
-    title: 'Export PDF',
-    text: 'Téléchargez un PDF propre, prêt pour les candidatures.',
+    title: t('homeFeatPdfTitle'),
+    text: t('homeFeatPdfText'),
   },
-]
+])
 </script>

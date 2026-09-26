@@ -2,16 +2,17 @@
   <div class="page-shell">
     <div class="d-flex flex-wrap align-center justify-space-between gap-3 mb-6">
       <div>
-        <h1 class="font-display text-3xl text-ink">Éditeur de CV</h1>
+        <h1 class="font-display text-3xl text-ink">{{ t('editorTitle') }}</h1>
         <p class="text-muted">
-          {{ resume?.title || 'Chargement…' }}
+          {{ resume?.title || t('loading') }}
           <span v-if="resume?.personal?.fullName"> · {{ resume.personal.fullName }}</span>
         </p>
       </div>
-      <div class="d-flex flex-wrap gap-2">
-        <v-btn variant="outlined" color="primary" to="/preview">Aperçu</v-btn>
-        <v-btn color="primary" :loading="downloading" prepend-icon="mdi-download" @click="onDownload">
-          Télécharger PDF
+      <div class="d-flex flex-wrap align-center gap-3">
+        <CvLocaleSwitch :label="t('language')" />
+        <v-btn variant="outlined" color="primary" to="/preview">{{ t('preview') }}</v-btn>
+        <v-btn color="primary" prepend-icon="mdi-download" @click="downloadOpen = true">
+          {{ t('downloadPdf') }}
         </v-btn>
       </div>
     </div>
@@ -21,18 +22,18 @@
 
     <template v-else>
       <v-tabs v-model="tab" color="primary" class="mb-4 editor-tabs" show-arrows>
-        <v-tab value="structure">Structure</v-tab>
-        <v-tab value="model">Modèle & langue</v-tab>
-        <v-tab value="profile">Profil</v-tab>
-        <v-tab v-if="sections.experience" value="experience">Expériences</v-tab>
-        <v-tab v-if="sections.education" value="education">Formations</v-tab>
-        <v-tab v-if="sections.skills" value="skills">Compétences</v-tab>
-        <v-tab v-if="sections.languages" value="languages">Langues</v-tab>
-        <v-tab v-if="sections.certifications" value="certifications">Certifications</v-tab>
-        <v-tab v-if="sections.awards" value="awards">Attestations</v-tab>
-        <v-tab v-if="sections.projects" value="projects">Projets</v-tab>
-        <v-tab v-if="sections.interests" value="interests">Intérêts</v-tab>
-        <v-tab v-if="sections.references" value="references">Références</v-tab>
+        <v-tab value="structure">{{ t('tabStructure') }}</v-tab>
+        <v-tab value="model">{{ t('tabModel') }}</v-tab>
+        <v-tab value="profile">{{ t('tabProfile') }}</v-tab>
+        <v-tab v-if="sections.experience" value="experience">{{ t('tabExperience') }}</v-tab>
+        <v-tab v-if="sections.education" value="education">{{ t('tabEducation') }}</v-tab>
+        <v-tab v-if="sections.skills" value="skills">{{ t('tabSkills') }}</v-tab>
+        <v-tab v-if="sections.languages" value="languages">{{ t('tabLanguages') }}</v-tab>
+        <v-tab v-if="sections.certifications" value="certifications">{{ t('tabCertifications') }}</v-tab>
+        <v-tab v-if="sections.awards" value="awards">{{ t('tabAwards') }}</v-tab>
+        <v-tab v-if="sections.projects" value="projects">{{ t('tabProjects') }}</v-tab>
+        <v-tab v-if="sections.interests" value="interests">{{ t('tabInterests') }}</v-tab>
+        <v-tab v-if="sections.references" value="references">{{ t('tabReferences') }}</v-tab>
       </v-tabs>
 
       <v-tabs-window v-model="tab">
@@ -74,15 +75,24 @@
         </v-tabs-window-item>
       </v-tabs-window>
     </template>
+
+    <CvDownloadDialog
+      v-model="downloadOpen"
+      :loading="downloading"
+      @confirm="onDownload"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { normalizeSections } from '~/utils/sections'
+import type { CvLocale } from '~/utils/cv-templates'
 
+const { t } = useUiI18n()
 const { resume, loading, error, loadDefault, downloadPdf } = useResume()
 const downloading = ref(false)
-const tab = ref('structure')
+const downloadOpen = ref(false)
+const tab = ref('model')
 
 const sections = computed(() => normalizeSections(resume.value?.sections))
 
@@ -98,10 +108,11 @@ onMounted(async () => {
   }
 })
 
-async function onDownload() {
+async function onDownload(locale: CvLocale) {
   downloading.value = true
   try {
-    await downloadPdf()
+    await downloadPdf(locale)
+    downloadOpen.value = false
   } finally {
     downloading.value = false
   }

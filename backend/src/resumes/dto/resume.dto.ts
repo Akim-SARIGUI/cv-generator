@@ -6,10 +6,22 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
 } from 'class-validator';
-import { TEMPLATE_IDS } from '../../common/cv-templates';
+import { isValidTemplateId } from '../../common/cv-templates';
 
-const ALLOWED_TEMPLATES = [...TEMPLATE_IDS, 'classic'];
+@ValidatorConstraint({ name: 'isCvTemplate', async: false })
+class IsCvTemplateConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown) {
+    return typeof value === 'string' && isValidTemplateId(value);
+  }
+
+  defaultMessage() {
+    return 'Modèle de CV invalide';
+  }
+}
 
 export class CreateResumeDto {
   @IsString()
@@ -19,7 +31,8 @@ export class CreateResumeDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(ALLOWED_TEMPLATES)
+  @MaxLength(64)
+  @Validate(IsCvTemplateConstraint)
   template?: string;
 
   @IsOptional()
@@ -37,7 +50,8 @@ export class UpdateResumeDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(ALLOWED_TEMPLATES)
+  @MaxLength(64)
+  @Validate(IsCvTemplateConstraint)
   template?: string;
 
   @IsOptional()
