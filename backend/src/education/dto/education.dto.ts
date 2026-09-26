@@ -46,4 +46,42 @@ export class CreateEducationDto {
   sortOrder?: number;
 }
 
-export class UpdateEducationDto extends CreateEducationDto {}
+export class UpdateEducationDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  degree?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  institution?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  location?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  currentEducation?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  description?: string;
+
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
+}

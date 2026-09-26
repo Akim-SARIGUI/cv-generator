@@ -23,17 +23,21 @@ model User {
 model Resume {
   id        String   @id @default(cuid())
   title     String   @default("Mon CV")
-  template  String   @default("classic")
+  template  String   @default("eu")
+  locale    String   @default("fr")
+  /// Clés de sections activées + titres custom optionnels
+  sections  Json     @default("{\"profile\":true,\"objective\":false,\"experience\":true,\"education\":true,\"skills\":true,\"languages\":true,\"certifications\":false,\"awards\":false,\"projects\":false,\"interests\":false,\"references\":false}")
   isDefault Boolean  @default(true) @map("is_default")
   userId    String   @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  personal   PersonalInfo?
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personal    PersonalInfo?
   experiences Experience[]
-  educations Education[]
-  skills     Skill[]
+  educations  Education[]
+  skills      Skill[]
+  extras      ExtraEntry[]
 
   @@index([userId])
   @@map("resumes")
@@ -50,6 +54,7 @@ model PersonalInfo {
   githubUrl   String? @map("github_url")
   websiteUrl  String? @map("website_url")
   summary     String?
+  objective   String?
   photoUrl    String? @map("photo_url")
 
   resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
@@ -113,4 +118,31 @@ model Skill {
 
   @@index([resumeId])
   @@map("skills")
+}
+
+enum ExtraKind {
+  CERTIFICATION
+  AWARD
+  PROJECT
+  INTEREST
+  REFERENCE
+  LANGUAGE
+}
+
+model ExtraEntry {
+  id          String    @id @default(cuid())
+  resumeId    String    @map("resume_id")
+  kind        ExtraKind
+  title       String
+  subtitle    String?
+  dateLabel   String?   @map("date_label")
+  description String?
+  url         String?
+  sortOrder   Int       @default(0) @map("sort_order")
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@index([resumeId, kind])
+  @@map("extra_entries")
 }

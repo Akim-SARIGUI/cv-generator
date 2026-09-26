@@ -15,12 +15,16 @@ export function useApi() {
       headers.Authorization = `Bearer ${token.value}`
     }
 
+    const isFormData =
+      typeof FormData !== 'undefined' && options.body instanceof FormData
+
     try {
       return await $fetch<T>(`${config.public.apiBase}${path}`, {
         method: options.method || 'GET',
         body: options.body as BodyInit | Record<string, unknown> | null | undefined,
         headers,
         responseType: options.responseType === 'blob' ? 'blob' : undefined,
+        ...(isFormData ? {} : {}),
       })
     } catch (error: unknown) {
       const status = (error as { statusCode?: number })?.statusCode

@@ -27,16 +27,18 @@ npm install
 
 # 2. Configurer la base (backend/.env)
 cp backend/.env.example backend/.env
-# Éditer DATABASE_URL si besoin
+# Éditer DATABASE_URL avec un user PostgreSQL valide, ex. :
+# DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/cv_generator?schema=public"
 
 # 3. Créer la base PostgreSQL
 createdb cv_generator   # ou via psql
 
-# 4. Migrations Prisma
-npm run db:migrate
+# 4. Migrations Prisma (depuis backend/)
+cd backend && npx prisma migrate dev --name init
 
-# 5. Lancer API + frontend
-npm run dev
+# 5. Lancer API + frontend (depuis la racine, après npm install dans backend/ et frontend/)
+cd backend && npm run dev    # http://localhost:3001/api
+cd frontend && npm run dev   # http://localhost:3000
 ```
 
 - Frontend : http://localhost:3000  

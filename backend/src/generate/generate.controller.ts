@@ -1,4 +1,4 @@
-import { Controller, Param, Post, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { GenerateService } from './generate.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -8,6 +8,14 @@ import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorat
 @UseGuards(JwtAuthGuard)
 export class GenerateController {
   constructor(private readonly generateService: GenerateService) {}
+
+  @Get('localized')
+  localized(
+    @CurrentUser() user: AuthUser,
+    @Param('resumeId') resumeId: string,
+  ) {
+    return this.generateService.getLocalizedResume(user.id, resumeId);
+  }
 
   @Post('pdf')
   generatePdf(

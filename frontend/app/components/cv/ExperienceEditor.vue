@@ -1,46 +1,60 @@
 <template>
   <v-card border class="pa-4 md:pa-6">
     <div class="d-flex align-center justify-space-between mb-4">
-      <h2 class="font-display text-xl">Expériences</h2>
-      <v-btn color="secondary" variant="tonal" prepend-icon="mdi-plus" @click="openCreate">
-        Ajouter
-      </v-btn>
+      <div>
+        <h2 class="font-display text-xl">Expériences</h2>
+        <p class="text-sm text-muted">Ajoutez et modifiez vos postes un par un</p>
+      </div>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">Ajouter</v-btn>
     </div>
+
+    <v-alert v-if="errorMsg" type="error" variant="tonal" class="mb-3" density="compact">
+      {{ errorMsg }}
+    </v-alert>
 
     <div v-if="!(resume?.experiences?.length)" class="text-muted text-sm mb-2">
       Aucune expérience pour le moment.
     </div>
 
-    <v-expansion-panels variant="accordion" class="mb-2">
-      <v-expansion-panel v-for="item in resume?.experiences || []" :key="item.id">
-        <v-expansion-panel-title>
-          <div>
-            <div class="font-medium">{{ item.jobTitle || 'Poste' }}</div>
-            <div class="text-sm text-muted">{{ item.company }}</div>
-          </div>
-        </v-expansion-panel-title>
-        <v-expansion-panel-text>
-          <ExperienceFields v-model="drafts[item.id]" />
-          <div class="d-flex gap-2 mt-3">
-            <v-btn color="primary" :loading="busyId === item.id" @click="saveItem(item.id)">
-              Enregistrer
-            </v-btn>
-            <v-btn color="error" variant="text" @click="removeItem(item.id)">Supprimer</v-btn>
-          </div>
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-    </v-expansion-panels>
+    <v-list lines="three" class="bg-transparent">
+      <v-list-item
+        v-for="item in resume?.experiences || []"
+        :key="item.id"
+        class="border rounded-lg mb-2 px-3"
+      >
+        <template #title>
+          <span class="font-medium">{{ item.jobTitle }}</span>
+        </template>
+        <template #subtitle>
+          <div>{{ item.company }}<span v-if="item.location"> · {{ item.location }}</span></div>
+          <div class="text-xs mt-1">{{ item.description || 'Sans description' }}</div>
+        </template>
+        <template #append>
+          <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(item)" />
+          <v-btn
+            icon="mdi-delete"
+            variant="text"
+            size="small"
+            color="error"
+            :loading="busyId === item.id"
+            @click="removeItem(item.id)"
+          />
+        </template>
+      </v-list-item>
+    </v-list>
 
-    <v-dialog v-model="dialog" max-width="640">
+    <v-dialog v-model="dialog" max-width="680" persistent>
       <v-card class="pa-4">
-        <v-card-title class="font-display">Nouvelle expérience</v-card-title>
+        <v-card-title class="font-display">
+          {{ editingId ? 'Modifier l’expérience' : 'Nouvelle expérience' }}
+        </v-card-title>
         <v-card-text>
-          <ExperienceFields v-model="createForm" />
+          <CvExperienceFields v-model="form" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="dialog = false">Annuler</v-btn>
-          <v-btn color="primary" :loading="creating" @click="createItem">Ajouter</v-btn>
+          <v-btn color="primary" :loading="busy" @click="save">Enregistrer</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -49,81 +63,94 @@
 
 <script setup lang="ts">
 import type { Experience } from '~/types/cv'
+import { toApiDate, toInputDate } from '~/utils/dates'
 
 const { resume, addExperience, updateExperience, removeExperience } = useResume()
 
 const dialog = ref(false)
-const creating = ref(false)
+const busy = ref(false)
 const busyId = ref<string | null>(null)
-const drafts = reactive<Record<string, Partial<Experience>>>({})
+const editingId = ref<string | null>(null)
+const errorMsg = ref('')
+const form = ref(emptyForm())
 
-const emptyForm = (): Partial<Experience> => ({
-  jobTitle: '',
-  company: '',
-  location: '',
-  startDate: '',
-  endDate: '',
-  currentJob: false,
-  description: '',
-})
-
-const createForm = ref(emptyForm())
-
-watch(
-  () => resume.value?.experiences,
-  (items) => {
-    for (const item of items || []) {
-      drafts[item.id] = {
-        jobTitle: item.jobTitle,
-        company: item.company,
-        location: item.location || '',
-        startDate: item.startDate ? item.startDate.slice(0, 10) : '',
-        endDate: item.endDate ? item.endDate.slice(0, 10) : '',
-        currentJob: item.currentJob,
-        description: item.description || '',
-      }
-    }
-  },
-  { immediate: true, deep: true },
-)
-
-function openCreate() {
-  createForm.value = emptyForm()
-  dialog.value = true
-}
-
-async function createItem() {
-  creating.value = true
-  try {
-    await addExperience(normalize(createForm.value))
-    dialog.value = false
-  } finally {
-    creating.value = false
+function emptyForm(): Partial<Experience> {
+  return {
+    jobTitle: '',
+    company: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    currentJob: false,
+    description: '',
   }
 }
 
-async function saveItem(id: string) {
-  busyId.value = id
+function openCreate() {
+  editingId.value = null
+  form.value = emptyForm()
+  errorMsg.value = ''
+  dialog.value = true
+}
+
+function openEdit(item: Experience) {
+  editingId.value = item.id
+  form.value = {
+    jobTitle: item.jobTitle,
+    company: item.company,
+    location: item.location || '',
+    startDate: toInputDate(item.startDate),
+    endDate: toInputDate(item.endDate),
+    currentJob: item.currentJob,
+    description: item.description || '',
+  }
+  errorMsg.value = ''
+  dialog.value = true
+}
+
+function payload() {
+  return {
+    jobTitle: (form.value.jobTitle || '').trim(),
+    company: (form.value.company || '').trim(),
+    location: form.value.location || undefined,
+    startDate: toApiDate(form.value.startDate),
+    endDate: form.value.currentJob ? undefined : toApiDate(form.value.endDate),
+    currentJob: Boolean(form.value.currentJob),
+    description: form.value.description || undefined,
+  }
+}
+
+async function save() {
+  errorMsg.value = ''
+  const body = payload()
+  if (!body.jobTitle || !body.company) {
+    errorMsg.value = 'Poste et entreprise sont obligatoires'
+    return
+  }
+  busy.value = true
   try {
-    await updateExperience(id, normalize(drafts[id]))
+    if (editingId.value) {
+      await updateExperience(editingId.value, body)
+    } else {
+      await addExperience(body)
+    }
+    dialog.value = false
+  } catch (e: unknown) {
+    const msg =
+      (e as { data?: { message?: string | string[] } })?.data?.message ||
+      'Échec de l’enregistrement'
+    errorMsg.value = Array.isArray(msg) ? msg.join(', ') : String(msg)
   } finally {
-    busyId.value = null
+    busy.value = false
   }
 }
 
 async function removeItem(id: string) {
-  await removeExperience(id)
-}
-
-function normalize(form: Partial<Experience>) {
-  return {
-    jobTitle: form.jobTitle || '',
-    company: form.company || '',
-    location: form.location || undefined,
-    startDate: form.startDate || undefined,
-    endDate: form.currentJob ? undefined : form.endDate || undefined,
-    currentJob: Boolean(form.currentJob),
-    description: form.description || undefined,
+  busyId.value = id
+  try {
+    await removeExperience(id)
+  } finally {
+    busyId.value = null
   }
 }
 </script>

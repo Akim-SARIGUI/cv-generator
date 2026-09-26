@@ -8,3 +8,5 @@ dist
 backend/dist
 backend/.env
 frontend/.env
+backend/uploads
+tmp-test-output/

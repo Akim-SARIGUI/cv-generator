@@ -9,6 +9,48 @@
       {{ message }}
     </v-alert>
 
+    <div class="d-flex flex-wrap gap-5 mb-5">
+      <div class="photo-box">
+        <div class="photo-frame" :class="{ 'photo-frame--empty': !photoPreview }">
+          <img v-if="photoPreview" :src="photoPreview" alt="Photo CV" class="photo-img" />
+          <span v-else class="text-xs text-muted text-center px-2">Photo portrait<br />35×45</span>
+        </div>
+        <div class="d-flex flex-column gap-2 mt-3" style="min-width: 140px">
+          <v-btn
+            size="small"
+            variant="outlined"
+            color="primary"
+            prepend-icon="mdi-camera"
+            :loading="uploading"
+            @click="fileInput?.click()"
+          >
+            Ajouter
+          </v-btn>
+          <v-btn
+            v-if="resume?.personal?.photoUrl"
+            size="small"
+            variant="text"
+            color="error"
+            :loading="uploading"
+            @click="onRemovePhoto"
+          >
+            Retirer
+          </v-btn>
+          <p class="text-[11px] text-muted">JPG / PNG / WebP · max 2 Mo</p>
+          <p v-if="!showsPhoto" class="text-[11px] text-accent">
+            Masquée sur le modèle US / ATS
+          </p>
+        </div>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          class="d-none"
+          @change="onFile"
+        />
+      </div>
+    </div>
+
     <v-row dense>
       <v-col cols="12" md="6">
         <v-text-field v-model="form.fullName" label="Nom complet *" />
@@ -32,14 +74,27 @@
         <v-text-field v-model="form.websiteUrl" label="Site web" />
       </v-col>
       <v-col cols="12">
-        <v-textarea v-model="form.summary" label="Résumé professionnel" rows="4" auto-grow />
+        <v-textarea v-model="form.summary" label="Profil / résumé professionnel" rows="4" auto-grow />
+      </v-col>
+      <v-col cols="12">
+        <v-textarea
+          v-model="form.objective"
+          label="Objectif de carrière (optionnel)"
+          rows="3"
+          auto-grow
+          hint="Activez la section « Objectif » dans Structure pour l’afficher"
+          persistent-hint
+        />
       </v-col>
     </v-row>
   </v-card>
 </template>
 
 <script setup lang="ts">
-const { resume, savePersonal, saving } = useResume()
+import { getTemplateMeta } from '~/utils/cv-templates'
+
+const { resume, savePersonal, uploadPhoto, removePhoto, saving } = useResume()
+const { mediaUrl } = useMediaUrl()
 
 const form = reactive({
   fullName: '',
@@ -50,10 +105,16 @@ const form = reactive({
   githubUrl: '',
   websiteUrl: '',
   summary: '',
+  objective: '',
 })
 
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
+const uploading = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const photoPreview = computed(() => mediaUrl(resume.value?.personal?.photoUrl))
+const showsPhoto = computed(() => getTemplateMeta(resume.value?.template).showsPhoto)
 
 watch(
   () => resume.value?.personal,
@@ -67,6 +128,7 @@ watch(
     form.githubUrl = personal.githubUrl || ''
     form.websiteUrl = personal.websiteUrl || ''
     form.summary = personal.summary || ''
+    form.objective = personal.objective || ''
   },
   { immediate: true },
 )
@@ -82,4 +144,69 @@ async function save() {
     message.value = 'Échec de l’enregistrement'
   }
 }
+
+async function onFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  uploading.value = true
+  message.value = ''
+  try {
+    await uploadPhoto(file)
+    messageType.value = 'success'
+    message.value = 'Photo enregistrée'
+  } catch {
+    messageType.value = 'error'
+    message.value = 'Échec de l’upload (JPG/PNG/WebP, max 2 Mo)'
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function onRemovePhoto() {
+  uploading.value = true
+  try {
+    await removePhoto()
+    messageType.value = 'success'
+    message.value = 'Photo retirée'
+  } catch {
+    messageType.value = 'error'
+    message.value = 'Impossible de retirer la photo'
+  } finally {
+    uploading.value = false
+  }
+}
 </script>
+
+<style scoped>
+.photo-box {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.photo-frame {
+  width: 105px;
+  height: 135px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--cv-line);
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.photo-frame--empty {
+  border-style: dashed;
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+</style>

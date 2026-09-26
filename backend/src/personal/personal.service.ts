@@ -1,6 +1,17 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveUploadAbsolute, uploadsRoot } from '../common/uploads-path';
 import { UpsertPersonalDto } from './dto/personal.dto';
+
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const MAX_BYTES = 2 * 1024 * 1024;
 
 @Injectable()
 export class PersonalService {
@@ -23,6 +34,89 @@ export class PersonalService {
     });
     if (!personal) throw new NotFoundException('Infos personnelles introuvables');
     return personal;
+  }
+
+  async uploadPhoto(
+    userId: string,
+    resumeId: string,
+    file?: Express.Multer.File,
+  ) {
+    await this.assertOwner(userId, resumeId);
+
+    if (!file) {
+      throw new BadRequestException('Aucun fichier envoyé');
+    }
+    if (!ALLOWED_MIME.has(file.mimetype)) {
+      throw new BadRequestException('Formats acceptés : JPG, PNG, WebP');
+    }
+    if (file.size > MAX_BYTES) {
+      throw new BadRequestException('Image trop lourde (max 2 Mo)');
+    }
+
+    const ext =
+      file.mimetype === 'image/png'
+        ? '.png'
+        : file.mimetype === 'image/webp'
+          ? '.webp'
+          : '.jpg';
+
+    const dir = join(uploadsRoot(), 'photos', userId);
+    mkdirSync(dir, { recursive: true });
+
+    const existing = await this.prisma.personalInfo.findUnique({
+      where: { resumeId },
+      select: { photoUrl: true },
+    });
+    if (existing?.photoUrl?.startsWith('/uploads/')) {
+      const previous = resolveUploadAbsolute(existing.photoUrl);
+      if (existsSync(previous)) {
+        try {
+          unlinkSync(previous);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    const filename = `${resumeId}${ext}`;
+    const absolute = join(dir, filename);
+    writeFileSync(absolute, file.buffer);
+
+    const photoUrl = `/uploads/photos/${userId}/${filename}`;
+
+    return this.prisma.personalInfo.upsert({
+      where: { resumeId },
+      create: {
+        resumeId,
+        fullName: '',
+        photoUrl,
+      },
+      update: { photoUrl },
+    });
+  }
+
+  async removePhoto(userId: string, resumeId: string) {
+    await this.assertOwner(userId, resumeId);
+    const personal = await this.prisma.personalInfo.findUnique({
+      where: { resumeId },
+    });
+    if (!personal) throw new NotFoundException('Infos personnelles introuvables');
+
+    if (personal.photoUrl?.startsWith('/uploads/')) {
+      const absolute = resolveUploadAbsolute(personal.photoUrl);
+      if (existsSync(absolute)) {
+        try {
+          unlinkSync(absolute);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    return this.prisma.personalInfo.update({
+      where: { resumeId },
+      data: { photoUrl: null },
+    });
   }
 
   private async assertOwner(userId: string, resumeId: string) {

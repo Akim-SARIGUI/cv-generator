@@ -48,6 +48,11 @@ export class UpsertPersonalDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
+  objective?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(500)
   photoUrl?: string;
 }

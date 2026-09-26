@@ -1,4 +1,15 @@
-import { IsBoolean, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { TEMPLATE_IDS } from '../../common/cv-templates';
+
+const ALLOWED_TEMPLATES = [...TEMPLATE_IDS, 'classic'];
 
 export class CreateResumeDto {
   @IsString()
@@ -8,7 +19,13 @@ export class CreateResumeDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(ALLOWED_TEMPLATES)
   template?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['fr', 'en'])
+  locale?: string;
 }
 
 export class UpdateResumeDto {
@@ -20,9 +37,19 @@ export class UpdateResumeDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(ALLOWED_TEMPLATES)
   template?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['fr', 'en'])
+  locale?: string;
 
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  sections?: Record<string, boolean>;
 }

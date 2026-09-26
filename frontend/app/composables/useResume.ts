@@ -1,6 +1,7 @@
 import type {
   Education,
   Experience,
+  ExtraEntry,
   PersonalInfo,
   Resume,
   Skill,
@@ -9,15 +10,50 @@ import type {
 export function useResume() {
   const { api } = useApi()
   const resume = useState<Resume | null>('current-resume', () => null)
+  const localizedResume = useState<Resume | null>('localized-resume', () => null)
+  const localizing = useState('resume-localizing', () => false)
   const loading = useState('resume-loading', () => false)
   const saving = useState('resume-saving', () => false)
   const error = useState<string | null>('resume-error', () => null)
+
+  async function refreshLocalized() {
+    if (!resume.value?.id) {
+      localizedResume.value = null
+      return null
+    }
+    localizing.value = true
+    try {
+      const localized = await api<Resume>(
+        `/resumes/${resume.value.id}/generate/localized`,
+      )
+      localizedResume.value = {
+        ...resume.value,
+        ...localized,
+        template: resume.value.template,
+        locale: resume.value.locale,
+        sections: resume.value.sections,
+        personal: localized.personal
+          ? {
+              ...localized.personal,
+              photoUrl:
+                localized.personal.photoUrl ??
+                resume.value.personal?.photoUrl ??
+                null,
+            }
+          : resume.value.personal,
+      }
+      return localizedResume.value
+    } finally {
+      localizing.value = false
+    }
+  }
 
   async function loadDefault() {
     loading.value = true
     error.value = null
     try {
       resume.value = await api<Resume>('/resumes/default')
+      await refreshLocalized()
       return resume.value
     } catch (e: unknown) {
       error.value = 'Impossible de charger le CV'
@@ -32,9 +68,29 @@ export function useResume() {
     error.value = null
     try {
       resume.value = await api<Resume>(`/resumes/${id}`)
+      await refreshLocalized()
       return resume.value
     } finally {
       loading.value = false
+    }
+  }
+
+  async function updateResume(
+    payload: Partial<Pick<Resume, 'title' | 'template' | 'locale' | 'isDefault' | 'sections'>>,
+  ) {
+    if (!resume.value) return
+    saving.value = true
+    try {
+      resume.value = await api<Resume>(`/resumes/${resume.value.id}`, {
+        method: 'PATCH',
+        body: payload,
+      })
+      if (payload.locale != null || payload.template != null) {
+        await refreshLocalized()
+      }
+      return resume.value
+    } finally {
+      saving.value = false
     }
   }
 
@@ -53,13 +109,48 @@ export function useResume() {
     }
   }
 
+  async function uploadPhoto(file: File) {
+    if (!resume.value) return
+    saving.value = true
+    try {
+      const body = new FormData()
+      body.append('photo', file)
+      const personal = await api<PersonalInfo>(
+        `/resumes/${resume.value.id}/personal/photo`,
+        { method: 'POST', body },
+      )
+      resume.value = { ...resume.value, personal }
+      return personal
+    } finally {
+      saving.value = false
+    }
+  }
+
+  async function removePhoto() {
+    if (!resume.value) return
+    saving.value = true
+    try {
+      const personal = await api<PersonalInfo>(
+        `/resumes/${resume.value.id}/personal/photo`,
+        { method: 'DELETE' },
+      )
+      resume.value = { ...resume.value, personal }
+      return personal
+    } finally {
+      saving.value = false
+    }
+  }
+
   async function addExperience(payload: Partial<Experience>) {
     if (!resume.value) return
     const created = await api<Experience>(
       `/resumes/${resume.value.id}/experiences`,
       { method: 'POST', body: payload },
     )
-    resume.value.experiences = [...(resume.value.experiences || []), created]
+    resume.value = {
+      ...resume.value,
+      experiences: [...(resume.value.experiences || []), created],
+    }
     return created
   }
 
@@ -69,9 +160,12 @@ export function useResume() {
       `/resumes/${resume.value.id}/experiences/${id}`,
       { method: 'PATCH', body: payload },
     )
-    resume.value.experiences = (resume.value.experiences || []).map((item) =>
-      item.id === id ? updated : item,
-    )
+    resume.value = {
+      ...resume.value,
+      experiences: (resume.value.experiences || []).map((item) =>
+        item.id === id ? updated : item,
+      ),
+    }
     return updated
   }
 
@@ -80,9 +174,10 @@ export function useResume() {
     await api(`/resumes/${resume.value.id}/experiences/${id}`, {
       method: 'DELETE',
     })
-    resume.value.experiences = (resume.value.experiences || []).filter(
-      (item) => item.id !== id,
-    )
+    resume.value = {
+      ...resume.value,
+      experiences: (resume.value.experiences || []).filter((item) => item.id !== id),
+    }
   }
 
   async function addEducation(payload: Partial<Education>) {
@@ -91,7 +186,10 @@ export function useResume() {
       `/resumes/${resume.value.id}/educations`,
       { method: 'POST', body: payload },
     )
-    resume.value.educations = [...(resume.value.educations || []), created]
+    resume.value = {
+      ...resume.value,
+      educations: [...(resume.value.educations || []), created],
+    }
     return created
   }
 
@@ -101,9 +199,12 @@ export function useResume() {
       `/resumes/${resume.value.id}/educations/${id}`,
       { method: 'PATCH', body: payload },
     )
-    resume.value.educations = (resume.value.educations || []).map((item) =>
-      item.id === id ? updated : item,
-    )
+    resume.value = {
+      ...resume.value,
+      educations: (resume.value.educations || []).map((item) =>
+        item.id === id ? updated : item,
+      ),
+    }
     return updated
   }
 
@@ -112,9 +213,10 @@ export function useResume() {
     await api(`/resumes/${resume.value.id}/educations/${id}`, {
       method: 'DELETE',
     })
-    resume.value.educations = (resume.value.educations || []).filter(
-      (item) => item.id !== id,
-    )
+    resume.value = {
+      ...resume.value,
+      educations: (resume.value.educations || []).filter((item) => item.id !== id),
+    }
   }
 
   async function addSkill(payload: Partial<Skill>) {
@@ -123,7 +225,10 @@ export function useResume() {
       method: 'POST',
       body: payload,
     })
-    resume.value.skills = [...(resume.value.skills || []), created]
+    resume.value = {
+      ...resume.value,
+      skills: [...(resume.value.skills || []), created],
+    }
     return created
   }
 
@@ -133,18 +238,59 @@ export function useResume() {
       `/resumes/${resume.value.id}/skills/${id}`,
       { method: 'PATCH', body: payload },
     )
-    resume.value.skills = (resume.value.skills || []).map((item) =>
-      item.id === id ? updated : item,
-    )
+    resume.value = {
+      ...resume.value,
+      skills: (resume.value.skills || []).map((item) =>
+        item.id === id ? updated : item,
+      ),
+    }
     return updated
   }
 
   async function removeSkill(id: string) {
     if (!resume.value) return
     await api(`/resumes/${resume.value.id}/skills/${id}`, { method: 'DELETE' })
-    resume.value.skills = (resume.value.skills || []).filter(
-      (item) => item.id !== id,
+    resume.value = {
+      ...resume.value,
+      skills: (resume.value.skills || []).filter((item) => item.id !== id),
+    }
+  }
+
+  async function addExtra(payload: Partial<ExtraEntry>) {
+    if (!resume.value) return
+    const created = await api<ExtraEntry>(
+      `/resumes/${resume.value.id}/extras`,
+      { method: 'POST', body: payload },
     )
+    resume.value = {
+      ...resume.value,
+      extras: [...(resume.value.extras || []), created],
+    }
+    return created
+  }
+
+  async function updateExtra(id: string, payload: Partial<ExtraEntry>) {
+    if (!resume.value) return
+    const updated = await api<ExtraEntry>(
+      `/resumes/${resume.value.id}/extras/${id}`,
+      { method: 'PATCH', body: payload },
+    )
+    resume.value = {
+      ...resume.value,
+      extras: (resume.value.extras || []).map((item) =>
+        item.id === id ? updated : item,
+      ),
+    }
+    return updated
+  }
+
+  async function removeExtra(id: string) {
+    if (!resume.value) return
+    await api(`/resumes/${resume.value.id}/extras/${id}`, { method: 'DELETE' })
+    resume.value = {
+      ...resume.value,
+      extras: (resume.value.extras || []).filter((item) => item.id !== id),
+    }
   }
 
   async function downloadPdf() {
@@ -163,12 +309,18 @@ export function useResume() {
 
   return {
     resume,
+    localizedResume,
+    localizing,
     loading,
     saving,
     error,
     loadDefault,
     loadById,
+    updateResume,
+    refreshLocalized,
     savePersonal,
+    uploadPhoto,
+    removePhoto,
     addExperience,
     updateExperience,
     removeExperience,
@@ -178,6 +330,9 @@ export function useResume() {
     addSkill,
     updateSkill,
     removeSkill,
+    addExtra,
+    updateExtra,
+    removeExtra,
     downloadPdf,
   }
 }

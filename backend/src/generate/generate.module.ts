@@ -5,5 +5,6 @@ import { GenerateController } from './generate.controller';
 @Module({
   controllers: [GenerateController],
   providers: [GenerateService],
+  exports: [GenerateService],
 })
 export class GenerateModule {}

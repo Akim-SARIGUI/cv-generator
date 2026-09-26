@@ -19,18 +19,78 @@
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
     <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4" />
 
-    <div v-else class="grid gap-5">
-      <CvPersonalForm />
-      <CvExperienceEditor />
-      <CvEducationEditor />
-      <CvSkillsEditor />
-    </div>
+    <template v-else>
+      <v-tabs v-model="tab" color="primary" class="mb-4 editor-tabs" show-arrows>
+        <v-tab value="structure">Structure</v-tab>
+        <v-tab value="model">Modèle & langue</v-tab>
+        <v-tab value="profile">Profil</v-tab>
+        <v-tab v-if="sections.experience" value="experience">Expériences</v-tab>
+        <v-tab v-if="sections.education" value="education">Formations</v-tab>
+        <v-tab v-if="sections.skills" value="skills">Compétences</v-tab>
+        <v-tab v-if="sections.languages" value="languages">Langues</v-tab>
+        <v-tab v-if="sections.certifications" value="certifications">Certifications</v-tab>
+        <v-tab v-if="sections.awards" value="awards">Attestations</v-tab>
+        <v-tab v-if="sections.projects" value="projects">Projets</v-tab>
+        <v-tab v-if="sections.interests" value="interests">Intérêts</v-tab>
+        <v-tab v-if="sections.references" value="references">Références</v-tab>
+      </v-tabs>
+
+      <v-tabs-window v-model="tab">
+        <v-tabs-window-item value="structure">
+          <CvSectionsManager />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="model">
+          <CvTemplatePicker />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="profile">
+          <CvPersonalForm />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="experience">
+          <CvExperienceEditor />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="education">
+          <CvEducationEditor />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="skills">
+          <CvSkillsEditor />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="languages">
+          <CvLanguagesEditor />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="certifications">
+          <CvExtrasEditor kind="CERTIFICATION" section-key="certifications" />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="awards">
+          <CvExtrasEditor kind="AWARD" section-key="awards" />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="projects">
+          <CvExtrasEditor kind="PROJECT" section-key="projects" />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="interests">
+          <CvExtrasEditor kind="INTEREST" section-key="interests" />
+        </v-tabs-window-item>
+        <v-tabs-window-item value="references">
+          <CvExtrasEditor kind="REFERENCE" section-key="references" />
+        </v-tabs-window-item>
+      </v-tabs-window>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { normalizeSections } from '~/utils/sections'
+
 const { resume, loading, error, loadDefault, downloadPdf } = useResume()
 const downloading = ref(false)
+const tab = ref('structure')
+
+const sections = computed(() => normalizeSections(resume.value?.sections))
+
+watch(sections, (s) => {
+  if (!s[tab.value as keyof typeof s] && !['structure', 'model', 'profile'].includes(tab.value)) {
+    tab.value = 'structure'
+  }
+})
 
 onMounted(async () => {
   if (!resume.value) {
@@ -47,3 +107,9 @@ async function onDownload() {
   }
 }
 </script>
+
+<style scoped>
+.editor-tabs {
+  border-bottom: 1px solid var(--cv-line);
+}
+</style>

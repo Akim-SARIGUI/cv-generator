@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEducationDto, UpdateEducationDto } from './dto/education.dto';
 
@@ -20,6 +21,7 @@ export class EducationService {
 
   async create(userId: string, resumeId: string, dto: CreateEducationDto) {
     await this.assertOwner(userId, resumeId);
+    const count = await this.prisma.education.count({ where: { resumeId } });
     return this.prisma.education.create({
       data: {
         resumeId,
@@ -30,7 +32,7 @@ export class EducationService {
         endDate: dto.endDate ? new Date(dto.endDate) : null,
         currentEducation: dto.currentEducation ?? false,
         description: dto.description,
-        sortOrder: dto.sortOrder ?? 0,
+        sortOrder: dto.sortOrder ?? count,
       },
     });
   }
@@ -42,19 +44,22 @@ export class EducationService {
     dto: UpdateEducationDto,
   ) {
     await this.assertItemOwner(userId, resumeId, id);
-    return this.prisma.education.update({
-      where: { id },
-      data: {
-        degree: dto.degree,
-        institution: dto.institution,
-        location: dto.location,
-        startDate: dto.startDate ? new Date(dto.startDate) : null,
-        endDate: dto.endDate ? new Date(dto.endDate) : null,
-        currentEducation: dto.currentEducation ?? false,
-        description: dto.description,
-        sortOrder: dto.sortOrder,
-      },
-    });
+    const data: Prisma.EducationUpdateInput = {};
+    if (dto.degree !== undefined) data.degree = dto.degree;
+    if (dto.institution !== undefined) data.institution = dto.institution;
+    if (dto.location !== undefined) data.location = dto.location;
+    if (dto.startDate !== undefined) {
+      data.startDate = dto.startDate ? new Date(dto.startDate) : null;
+    }
+    if (dto.endDate !== undefined) {
+      data.endDate = dto.endDate ? new Date(dto.endDate) : null;
+    }
+    if (dto.currentEducation !== undefined) {
+      data.currentEducation = dto.currentEducation;
+    }
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.sortOrder !== undefined) data.sortOrder = dto.sortOrder;
+    return this.prisma.education.update({ where: { id }, data });
   }
 
   async remove(userId: string, resumeId: string, id: string) {

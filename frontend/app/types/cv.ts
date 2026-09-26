@@ -16,6 +16,7 @@ export type PersonalInfo = {
   githubUrl?: string | null
   websiteUrl?: string | null
   summary?: string | null
+  objective?: string | null
   photoUrl?: string | null
 }
 
@@ -56,10 +57,32 @@ export type Skill = {
   sortOrder: number
 }
 
+export type ExtraKind =
+  | 'CERTIFICATION'
+  | 'AWARD'
+  | 'PROJECT'
+  | 'INTEREST'
+  | 'REFERENCE'
+  | 'LANGUAGE'
+
+export type ExtraEntry = {
+  id: string
+  resumeId: string
+  kind: ExtraKind
+  title: string
+  subtitle?: string | null
+  dateLabel?: string | null
+  description?: string | null
+  url?: string | null
+  sortOrder: number
+}
+
 export type Resume = {
   id: string
   title: string
   template: string
+  locale: string
+  sections?: Record<string, boolean>
   isDefault: boolean
   userId: string
   createdAt: string
@@ -68,6 +91,7 @@ export type Resume = {
   experiences?: Experience[]
   educations?: Education[]
   skills?: Skill[]
+  extras?: ExtraEntry[]
 }
 
 export type AuthResponse = {

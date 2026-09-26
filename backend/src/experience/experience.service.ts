@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateExperienceDto, UpdateExperienceDto } from './dto/experience.dto';
 
@@ -20,6 +21,7 @@ export class ExperienceService {
 
   async create(userId: string, resumeId: string, dto: CreateExperienceDto) {
     await this.assertOwner(userId, resumeId);
+    const count = await this.prisma.experience.count({ where: { resumeId } });
     return this.prisma.experience.create({
       data: {
         resumeId,
@@ -30,7 +32,7 @@ export class ExperienceService {
         endDate: dto.endDate ? new Date(dto.endDate) : null,
         currentJob: dto.currentJob ?? false,
         description: dto.description,
-        sortOrder: dto.sortOrder ?? 0,
+        sortOrder: dto.sortOrder ?? count,
       },
     });
   }
@@ -42,19 +44,20 @@ export class ExperienceService {
     dto: UpdateExperienceDto,
   ) {
     await this.assertItemOwner(userId, resumeId, id);
-    return this.prisma.experience.update({
-      where: { id },
-      data: {
-        jobTitle: dto.jobTitle,
-        company: dto.company,
-        location: dto.location,
-        startDate: dto.startDate ? new Date(dto.startDate) : null,
-        endDate: dto.endDate ? new Date(dto.endDate) : null,
-        currentJob: dto.currentJob ?? false,
-        description: dto.description,
-        sortOrder: dto.sortOrder,
-      },
-    });
+    const data: Prisma.ExperienceUpdateInput = {};
+    if (dto.jobTitle !== undefined) data.jobTitle = dto.jobTitle;
+    if (dto.company !== undefined) data.company = dto.company;
+    if (dto.location !== undefined) data.location = dto.location;
+    if (dto.startDate !== undefined) {
+      data.startDate = dto.startDate ? new Date(dto.startDate) : null;
+    }
+    if (dto.endDate !== undefined) {
+      data.endDate = dto.endDate ? new Date(dto.endDate) : null;
+    }
+    if (dto.currentJob !== undefined) data.currentJob = dto.currentJob;
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.sortOrder !== undefined) data.sortOrder = dto.sortOrder;
+    return this.prisma.experience.update({ where: { id }, data });
   }
 
   async remove(userId: string, resumeId: string, id: string) {

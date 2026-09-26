@@ -9,12 +9,16 @@ import { EducationModule } from './education/education.module';
 import { SkillModule } from './skill/skill.module';
 import { GenerateModule } from './generate/generate.module';
 import { ResumesModule } from './resumes/resumes.module';
+import { TranslateModule } from './translate/translate.module';
+import { ExtrasModule } from './extras/extras.module';
 import { HealthController } from './health.controller';
+import { TemplatesController } from './templates/templates.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    TranslateModule,
     AuthModule,
     UsersModule,
     ResumesModule,
@@ -22,8 +26,9 @@ import { HealthController } from './health.controller';
     ExperienceModule,
     EducationModule,
     SkillModule,
+    ExtrasModule,
     GenerateModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, TemplatesController],
 })
 export class AppModule {}

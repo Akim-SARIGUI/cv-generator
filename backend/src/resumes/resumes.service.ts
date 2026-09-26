@@ -5,12 +5,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateResumeDto, UpdateResumeDto } from './dto/resume.dto';
+import { normalizeSections } from '../common/sections';
 
 const resumeInclude = {
   personal: true,
   experiences: { orderBy: { sortOrder: 'asc' as const } },
   educations: { orderBy: { sortOrder: 'asc' as const } },
   skills: { orderBy: { sortOrder: 'asc' as const } },
+  extras: { orderBy: [{ kind: 'asc' as const }, { sortOrder: 'asc' as const }] },
 };
 
 @Injectable()
@@ -67,7 +69,8 @@ export class ResumesService {
       data: {
         userId,
         title: dto.title,
-        template: dto.template ?? 'classic',
+        template: dto.template === 'classic' ? 'eu' : (dto.template ?? 'eu'),
+        locale: dto.locale ?? 'fr',
         isDefault: false,
         personal: {
           create: {
@@ -94,8 +97,14 @@ export class ResumesService {
       where: { id: resumeId },
       data: {
         title: dto.title,
-        template: dto.template,
+        template:
+          dto.template === 'classic' ? 'eu' : dto.template,
+        locale: dto.locale,
         isDefault: dto.isDefault,
+        sections:
+          dto.sections != null
+            ? normalizeSections(dto.sections)
+            : undefined,
       },
       include: resumeInclude,
     });

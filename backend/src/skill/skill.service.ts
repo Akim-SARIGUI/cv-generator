@@ -25,7 +25,7 @@ export class SkillService {
       data: {
         resumeId,
         name: dto.name,
-        category: dto.category ?? SkillCategory.TECHNICAL,
+        category: (dto.category as SkillCategory) ?? SkillCategory.TECHNICAL,
         proficiency: dto.proficiency ?? 3,
         sortOrder: dto.sortOrder ?? 0,
       },
