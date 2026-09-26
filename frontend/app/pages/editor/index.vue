@@ -22,6 +22,7 @@
 
     <template v-else>
       <v-tabs v-model="tab" color="primary" class="mb-4 editor-tabs" show-arrows>
+        <v-tab value="import">{{ t('tabImport') }}</v-tab>
         <v-tab value="structure">{{ t('tabStructure') }}</v-tab>
         <v-tab value="model">{{ t('tabModel') }}</v-tab>
         <v-tab value="profile">{{ t('tabProfile') }}</v-tab>
@@ -37,6 +38,9 @@
       </v-tabs>
 
       <v-tabs-window v-model="tab">
+        <v-tabs-window-item value="import">
+          <CvImportPanel @imported="onImported" />
+        </v-tabs-window-item>
         <v-tabs-window-item value="structure">
           <CvSectionsManager />
         </v-tabs-window-item>
@@ -92,12 +96,15 @@ const { t } = useUiI18n()
 const { resume, loading, error, loadDefault, downloadPdf } = useResume()
 const downloading = ref(false)
 const downloadOpen = ref(false)
-const tab = ref('model')
+const tab = ref('import')
 
 const sections = computed(() => normalizeSections(resume.value?.sections))
 
 watch(sections, (s) => {
-  if (!s[tab.value as keyof typeof s] && !['structure', 'model', 'profile'].includes(tab.value)) {
+  if (
+    !s[tab.value as keyof typeof s] &&
+    !['import', 'structure', 'model', 'profile'].includes(tab.value)
+  ) {
     tab.value = 'structure'
   }
 })
@@ -107,6 +114,10 @@ onMounted(async () => {
     await loadDefault()
   }
 })
+
+function onImported() {
+  tab.value = 'profile'
+}
 
 async function onDownload(locale: CvLocale) {
   downloading.value = true

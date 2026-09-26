@@ -11,6 +11,7 @@ import { GenerateModule } from './generate/generate.module';
 import { ResumesModule } from './resumes/resumes.module';
 import { TranslateModule } from './translate/translate.module';
 import { ExtrasModule } from './extras/extras.module';
+import { ImportModule } from './import/import.module';
 import { HealthController } from './health.controller';
 import { TemplatesController } from './templates/templates.controller';
 
@@ -27,6 +28,7 @@ import { TemplatesController } from './templates/templates.controller';
     EducationModule,
     SkillModule,
     ExtrasModule,
+    ImportModule,
     GenerateModule,
   ],
   controllers: [HealthController, TemplatesController],

@@ -2,6 +2,7 @@ import type {
   Education,
   Experience,
   ExtraEntry,
+  ExtractedCvDraft,
   PersonalInfo,
   Resume,
   Skill,
@@ -319,6 +320,38 @@ export function useResume() {
     URL.revokeObjectURL(url)
   }
 
+  async function parseImportedCv(file: File) {
+    if (!resume.value) return null
+    const form = new FormData()
+    form.append('file', file)
+    return api<ExtractedCvDraft>(`/resumes/${resume.value.id}/import/parse`, {
+      method: 'POST',
+      body: form,
+    })
+  }
+
+  async function applyImportedCv(draft: ExtractedCvDraft, replaceExisting = true) {
+    if (!resume.value) return null
+    saving.value = true
+    try {
+      resume.value = await api<Resume>(`/resumes/${resume.value.id}/import/apply`, {
+        method: 'POST',
+        body: {
+          personal: draft.personal || {},
+          experiences: draft.experiences || [],
+          educations: draft.educations || [],
+          skills: draft.skills || [],
+          extras: draft.extras || [],
+          replaceExisting,
+        },
+      })
+      await refreshLocalized()
+      return resume.value
+    } finally {
+      saving.value = false
+    }
+  }
+
   return {
     resume,
     localizedResume,
@@ -346,5 +379,7 @@ export function useResume() {
     updateExtra,
     removeExtra,
     downloadPdf,
+    parseImportedCv,
+    applyImportedCv,
   }
 }
