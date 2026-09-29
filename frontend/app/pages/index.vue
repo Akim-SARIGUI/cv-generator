@@ -15,9 +15,18 @@
           <v-btn
             color="primary"
             size="large"
-            :to="isAuthenticated ? '/editor' : '/auth/register'"
+            :to="isAuthenticated ? '/dashboard' : '/auth/register'"
           >
-            {{ isAuthenticated ? t('homeCtaContinue') : t('homeCtaStart') }}
+            {{ isAuthenticated ? t('navDashboard') : t('homeCtaStart') }}
+          </v-btn>
+          <v-btn
+            v-if="isAuthenticated"
+            variant="outlined"
+            color="primary"
+            size="large"
+            to="/editor"
+          >
+            {{ t('homeCtaContinue') }}
           </v-btn>
           <v-btn
             v-if="!isAuthenticated"

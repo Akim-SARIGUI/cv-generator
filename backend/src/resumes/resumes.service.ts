@@ -22,7 +22,17 @@ export class ResumesService {
   list(userId: string) {
     return this.prisma.resume.findMany({
       where: { userId },
-      include: { personal: true },
+      include: {
+        personal: true,
+        _count: {
+          select: {
+            experiences: true,
+            educations: true,
+            skills: true,
+            extras: true,
+          },
+        },
+      },
       orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
     });
   }

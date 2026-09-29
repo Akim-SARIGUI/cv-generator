@@ -31,6 +31,8 @@
 </template>
 
 <script setup lang="ts">
+import { apiErrorMessage } from '~/utils/api-error'
+
 definePageMeta({ layout: false })
 
 const { register } = useAuth()
@@ -49,10 +51,9 @@ async function onSubmit() {
       email: email.value,
       password: password.value,
     })
-    await navigateTo('/editor')
+    await navigateTo('/dashboard')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string | string[] } })?.data?.message
-    error.value = Array.isArray(msg) ? msg.join(', ') : msg || 'Inscription impossible'
+    error.value = apiErrorMessage(e, 'Inscription impossible', 'Impossible de joindre le serveur. Réessayez dans un instant.')
   } finally {
     loading.value = false
   }

@@ -13,6 +13,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (token.value && isAuthPage) {
-    return navigateTo('/editor')
+    return navigateTo('/dashboard')
+  }
+
+  if (to.path.startsWith('/admin') && user.value?.role !== 'ADMIN') {
+    return navigateTo('/dashboard')
   }
 })

@@ -93,7 +93,8 @@ import { normalizeSections } from '~/utils/sections'
 import type { CvLocale } from '~/utils/cv-templates'
 
 const { t } = useUiI18n()
-const { resume, loading, error, loadDefault, downloadPdf } = useResume()
+const route = useRoute()
+const { resume, loading, error, loadDefault, loadById, downloadPdf } = useResume()
 const downloading = ref(false)
 const downloadOpen = ref(false)
 const tab = ref('import')
@@ -109,10 +110,18 @@ watch(sections, (s) => {
   }
 })
 
-onMounted(async () => {
-  if (!resume.value) {
-    await loadDefault()
+async function openFromRoute() {
+  const id = typeof route.query.id === 'string' ? route.query.id : ''
+  if (id) {
+    if (resume.value?.id !== id) await loadById(id)
+    return
   }
+  if (!resume.value) await loadDefault()
+}
+
+onMounted(openFromRoute)
+watch(() => route.query.id, () => {
+  void openFromRoute()
 })
 
 function onImported() {

@@ -3,12 +3,23 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { adminEmails } from '../common/admin-emails';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+
+const publicUserSelect = {
+  id: true,
+  email: true,
+  username: true,
+  role: true,
+  createdAt: true,
+} as const;
 
 @Injectable()
 export class AuthService {
@@ -16,6 +27,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -30,11 +42,13 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
+    const email = dto.email.toLowerCase();
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email.toLowerCase(),
+        email,
         username: dto.username,
         passwordHash,
+        role: this.roleFor(email),
         resumes: {
           create: {
             title: 'Mon CV',
@@ -42,18 +56,13 @@ export class AuthService {
             personal: {
               create: {
                 fullName: dto.username,
-                email: dto.email.toLowerCase(),
+                email,
               },
             },
           },
         },
       },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        createdAt: true,
-      },
+      select: publicUserSelect,
     });
 
     return {
@@ -76,15 +85,32 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
+    const role = this.roleFor(user.email);
+    const promoted =
+      role === UserRole.ADMIN && user.role !== UserRole.ADMIN
+        ? await this.prisma.user.update({
+            where: { id: user.id },
+            data: { role },
+            select: publicUserSelect,
+          })
+        : null;
+
     return {
-      user: {
+      user: promoted ?? {
         id: user.id,
         email: user.email,
         username: user.username,
+        role: user.role,
         createdAt: user.createdAt,
       },
       accessToken: await this.signToken(user.id, user.email),
     };
+  }
+
+  private roleFor(email: string): UserRole {
+    return adminEmails(this.config).has(email.toLowerCase())
+      ? UserRole.ADMIN
+      : UserRole.USER;
   }
 
   private signToken(userId: string, email: string) {

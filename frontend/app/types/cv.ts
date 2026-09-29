@@ -1,7 +1,10 @@
+export type UserRole = 'USER' | 'ADMIN'
+
 export type AuthUser = {
   id: string
   email: string
   username: string
+  role?: UserRole
   createdAt?: string
 }
 
@@ -92,6 +95,12 @@ export type Resume = {
   educations?: Education[]
   skills?: Skill[]
   extras?: ExtraEntry[]
+  _count?: {
+    experiences: number
+    educations: number
+    skills: number
+    extras: number
+  }
 }
 
 export type AuthResponse = {

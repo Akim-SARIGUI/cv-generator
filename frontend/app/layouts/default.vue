@@ -8,8 +8,12 @@
         <v-spacer />
         <CvLocaleSwitch class="me-3" compact />
         <template v-if="isAuthenticated">
+          <v-btn variant="text" to="/dashboard" class="me-1">{{ t('navDashboard') }}</v-btn>
           <v-btn variant="text" to="/editor" class="me-1">{{ t('navEditor') }}</v-btn>
-          <v-btn variant="text" to="/preview" class="me-2">{{ t('navPreview') }}</v-btn>
+          <v-btn variant="text" to="/preview" class="me-1">{{ t('navPreview') }}</v-btn>
+          <v-btn v-if="user?.role === 'ADMIN'" variant="text" to="/admin" class="me-2">
+            {{ t('navAdmin') }}
+          </v-btn>
           <span class="text-sm text-muted me-3 hidden sm:inline">{{ user?.username }}</span>
           <v-btn color="primary" variant="tonal" @click="logout">{{ t('navLogout') }}</v-btn>
         </template>

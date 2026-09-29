@@ -41,11 +41,13 @@ const {
   loading,
   error,
   loadDefault,
+  loadById,
   downloadPdf,
   refreshLocalized,
 } = useResume()
 const { findTemplate, loadTemplates } = useTemplates()
 
+const route = useRoute()
 const downloading = ref(false)
 const downloadOpen = ref(false)
 
@@ -55,10 +57,15 @@ const templateLabel = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([loadDefault(), loadTemplates()])
-  if (!localizedResume.value) {
-    await refreshLocalized()
+  const id = typeof route.query.id === 'string' ? route.query.id : ''
+  await loadTemplates()
+  if (id) {
+    if (resume.value?.id !== id) await loadById(id)
+    else if (!localizedResume.value) await refreshLocalized()
+    return
   }
+  if (!resume.value) await loadDefault()
+  else if (!localizedResume.value) await refreshLocalized()
 })
 
 async function onDownload(lang: CvLocale) {

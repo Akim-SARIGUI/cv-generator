@@ -14,6 +14,7 @@ import { ExtrasModule } from './extras/extras.module';
 import { ImportModule } from './import/import.module';
 import { HealthController } from './health.controller';
 import { TemplatesController } from './templates/templates.controller';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TemplatesController } from './templates/templates.controller';
     ExtrasModule,
     ImportModule,
     GenerateModule,
+    AdminModule,
   ],
   controllers: [HealthController, TemplatesController],
 })

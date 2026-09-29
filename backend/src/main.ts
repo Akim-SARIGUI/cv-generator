@@ -26,7 +26,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: config.get<string>('CORS_ORIGIN', 'http://localhost:3000'),
+    origin: resolveCorsOrigin(config),
     credentials: true,
   });
 
@@ -36,3 +36,24 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+/** Origines autorisées : CORS_ORIGIN (liste) et, par défaut, les fronts https://*.netlify.app. */
+function resolveCorsOrigin(config: ConfigService) {
+  const allowed = (config.get<string>('CORS_ORIGIN', 'http://localhost:3000') ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const allowNetlify = config.get<string>('CORS_ALLOW_NETLIFY', 'true') !== 'false';
+
+  return (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin || allowed.includes('*') || allowed.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    if (allowNetlify && /^https:\/\/[a-z0-9-]+\.netlify\.app$/i.test(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('Origine CORS refusée'), false);
+  };
+}
