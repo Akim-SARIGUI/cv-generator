@@ -1,5 +1,6 @@
 <template>
   <v-app>
+    <CvVuetifyLocaleSync />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
