@@ -7,6 +7,7 @@ import type {
   Resume,
   Skill,
 } from '~/types/cv'
+import { normalizeSections, type SectionKey } from '~/utils/sections'
 
 export function useResume() {
   const { api } = useApi()
@@ -16,17 +17,42 @@ export function useResume() {
   const loading = useState('resume-loading', () => false)
   const saving = useState('resume-saving', () => false)
   const error = useState<string | null>('resume-error', () => null)
+  let localizeSeq = 0
+
+  function syncLivePreview() {
+    publishPreview()
+    void refreshLocalized()
+  }
+
+  function publishPreview() {
+    if (!resume.value) {
+      localizedResume.value = null
+      return
+    }
+    localizedResume.value = {
+      ...resume.value,
+      experiences: [...(resume.value.experiences || [])],
+      educations: [...(resume.value.educations || [])],
+      skills: [...(resume.value.skills || [])],
+      extras: [...(resume.value.extras || [])],
+    }
+  }
 
   async function refreshLocalized() {
     if (!resume.value?.id) {
       localizedResume.value = null
       return null
     }
+    const seq = ++localizeSeq
+    const resumeId = resume.value.id
     localizing.value = true
     try {
       const localized = await api<Resume>(
         `/resumes/${resume.value.id}/generate/localized`,
       )
+      if (seq !== localizeSeq || resume.value?.id !== resumeId) {
+        return localizedResume.value
+      }
       localizedResume.value = {
         ...resume.value,
         ...localized,
@@ -37,15 +63,18 @@ export function useResume() {
           ? {
               ...localized.personal,
               photoUrl:
-                localized.personal.photoUrl ??
                 resume.value.personal?.photoUrl ??
+                localized.personal.photoUrl ??
                 null,
             }
           : resume.value.personal,
       }
       return localizedResume.value
+    } catch {
+      publishPreview()
+      return localizedResume.value
     } finally {
-      localizing.value = false
+      if (seq === localizeSeq) localizing.value = false
     }
   }
 
@@ -86,9 +115,7 @@ export function useResume() {
         method: 'PATCH',
         body: payload,
       })
-      if (payload.locale != null || payload.template != null) {
-        await refreshLocalized()
-      }
+      syncLivePreview()
       return resume.value
     } finally {
       saving.value = false
@@ -104,6 +131,7 @@ export function useResume() {
         { method: 'PUT', body: payload },
       )
       resume.value = { ...resume.value, personal }
+      syncLivePreview()
       return personal
     } finally {
       saving.value = false
@@ -121,6 +149,7 @@ export function useResume() {
         { method: 'POST', body },
       )
       resume.value = { ...resume.value, personal }
+      publishPreview()
       return personal
     } finally {
       saving.value = false
@@ -136,14 +165,23 @@ export function useResume() {
         { method: 'DELETE' },
       )
       resume.value = { ...resume.value, personal }
+      publishPreview()
       return personal
     } finally {
       saving.value = false
     }
   }
 
+  async function ensureSection(key: SectionKey) {
+    if (!resume.value) return
+    const sections = normalizeSections(resume.value.sections)
+    if (sections[key]) return
+    await updateResume({ sections: { ...sections, [key]: true } })
+  }
+
   async function addExperience(payload: Partial<Experience>) {
     if (!resume.value) return
+    await ensureSection('experience')
     const created = await api<Experience>(
       `/resumes/${resume.value.id}/experiences`,
       { method: 'POST', body: payload },
@@ -152,6 +190,7 @@ export function useResume() {
       ...resume.value,
       experiences: [...(resume.value.experiences || []), created],
     }
+    syncLivePreview()
     return created
   }
 
@@ -167,6 +206,7 @@ export function useResume() {
         item.id === id ? updated : item,
       ),
     }
+    syncLivePreview()
     return updated
   }
 
@@ -179,10 +219,12 @@ export function useResume() {
       ...resume.value,
       experiences: (resume.value.experiences || []).filter((item) => item.id !== id),
     }
+    syncLivePreview()
   }
 
   async function addEducation(payload: Partial<Education>) {
     if (!resume.value) return
+    await ensureSection('education')
     const created = await api<Education>(
       `/resumes/${resume.value.id}/educations`,
       { method: 'POST', body: payload },
@@ -191,6 +233,7 @@ export function useResume() {
       ...resume.value,
       educations: [...(resume.value.educations || []), created],
     }
+    syncLivePreview()
     return created
   }
 
@@ -206,6 +249,7 @@ export function useResume() {
         item.id === id ? updated : item,
       ),
     }
+    syncLivePreview()
     return updated
   }
 
@@ -218,10 +262,12 @@ export function useResume() {
       ...resume.value,
       educations: (resume.value.educations || []).filter((item) => item.id !== id),
     }
+    syncLivePreview()
   }
 
   async function addSkill(payload: Partial<Skill>) {
     if (!resume.value) return
+    await ensureSection('skills')
     const created = await api<Skill>(`/resumes/${resume.value.id}/skills`, {
       method: 'POST',
       body: payload,
@@ -230,6 +276,7 @@ export function useResume() {
       ...resume.value,
       skills: [...(resume.value.skills || []), created],
     }
+    syncLivePreview()
     return created
   }
 
@@ -245,6 +292,7 @@ export function useResume() {
         item.id === id ? updated : item,
       ),
     }
+    syncLivePreview()
     return updated
   }
 
@@ -255,10 +303,21 @@ export function useResume() {
       ...resume.value,
       skills: (resume.value.skills || []).filter((item) => item.id !== id),
     }
+    syncLivePreview()
   }
 
   async function addExtra(payload: Partial<ExtraEntry>) {
     if (!resume.value) return
+    const sectionByKind: Partial<Record<ExtraEntry['kind'], SectionKey>> = {
+      CERTIFICATION: 'certifications',
+      AWARD: 'awards',
+      PROJECT: 'projects',
+      INTEREST: 'interests',
+      REFERENCE: 'references',
+      LANGUAGE: 'languages',
+    }
+    const section = payload.kind ? sectionByKind[payload.kind] : undefined
+    if (section) await ensureSection(section)
     const created = await api<ExtraEntry>(
       `/resumes/${resume.value.id}/extras`,
       { method: 'POST', body: payload },
@@ -267,6 +326,7 @@ export function useResume() {
       ...resume.value,
       extras: [...(resume.value.extras || []), created],
     }
+    syncLivePreview()
     return created
   }
 
@@ -282,6 +342,7 @@ export function useResume() {
         item.id === id ? updated : item,
       ),
     }
+    syncLivePreview()
     return updated
   }
 
@@ -292,6 +353,7 @@ export function useResume() {
       ...resume.value,
       extras: (resume.value.extras || []).filter((item) => item.id !== id),
     }
+    syncLivePreview()
   }
 
   async function downloadPdf(localeOverride?: string) {

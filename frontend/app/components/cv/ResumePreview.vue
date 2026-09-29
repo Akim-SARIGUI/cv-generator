@@ -59,11 +59,12 @@
         <ul class="text-xs space-y-2 opacity-95 mb-6">
           <li v-for="line in contactList" :key="line">{{ line }}</li>
         </ul>
-        <template v-if="skills.length">
+        <template v-if="skillGroups.length">
           <p class="text-xs uppercase tracking-wider opacity-80 mb-2">{{ labels.skills }}</p>
-          <ul class="text-xs space-y-1.5 opacity-95">
-            <li v-for="skill in skills" :key="skill.id">• {{ skill.name }}</li>
-          </ul>
+          <p v-for="group in skillGroups" :key="group.label" class="text-xs leading-relaxed mb-2 opacity-95">
+            <span class="font-semibold">{{ group.label }} :</span>
+            {{ group.items.map((skill) => skill.name).join(', ') }}.
+          </p>
         </template>
       </aside>
       <div class="flex-grow-1 p-6 md:p-8">
@@ -139,9 +140,16 @@
       <section v-if="experiences.length" class="mb-6">
         <h2 class="section-title" :style="{ color: accent }">{{ labels.experience }}</h2>
         <div v-for="item in experiences" :key="item.id" class="timeline-item mb-4">
-          <p class="font-semibold">{{ item.jobTitle }}</p>
-          <p class="text-xs text-muted mb-1">{{ item.company }}</p>
-          <p v-if="item.description" class="text-sm whitespace-pre-wrap">{{ item.description }}</p>
+          <p class="text-sm leading-relaxed">
+            <span v-if="experienceYears(item)" class="font-semibold">{{ experienceYears(item) }} : </span>
+            <span class="font-semibold">{{ item.jobTitle }}</span>
+            <span v-if="item.company" class="italic"> — {{ item.company }}</span>
+          </p>
+          <ul v-if="item.description" class="cv-bullets">
+            <li v-for="(line, index) in item.description.split(/\n+/).filter(Boolean)" :key="index">
+              {{ line.replace(/^[-•]\s*/, '') }}
+            </li>
+          </ul>
         </div>
       </section>
       <CvPreviewSections
@@ -166,9 +174,10 @@
             <li v-for="line in contactList" :key="line">{{ line }}</li>
           </ul>
           <p class="text-xs font-bold uppercase mb-2" :style="{ color: accent }">{{ labels.skills }}</p>
-          <ul class="text-xs space-y-1">
-            <li v-for="skill in skills" :key="skill.id">• {{ skill.name }}</li>
-          </ul>
+          <p v-for="group in skillGroups" :key="group.label" class="text-xs leading-relaxed mb-2">
+            <span class="font-semibold">{{ group.label }} :</span>
+            {{ group.items.map((skill) => skill.name).join(', ') }}.
+          </p>
         </aside>
         <div class="flex-grow-1" style="min-width: 240px">
           <section v-if="personal?.summary" class="mb-6">
@@ -227,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Resume } from '~/types/cv'
+import type { Experience, Resume, SkillCategory } from '~/types/cv'
 import {
   getLabels,
   getTemplateMeta,
@@ -243,6 +252,22 @@ const skills = computed(() =>
   (props.resume?.skills || []).filter((s) => s.category !== 'LANGUAGE'),
 )
 const experiences = computed(() => props.resume?.experiences || [])
+const skillGroups = computed(() => {
+  const names: Partial<Record<SkillCategory, string>> = {
+    TECHNICAL: labels.value.technical,
+    SOFT: labels.value.soft,
+    TOOL: labels.value.tool,
+    OTHER: labels.value.other,
+  }
+  const map = new Map<string, typeof skills.value>()
+  for (const skill of skills.value) {
+    const label = names[skill.category] || skill.category
+    const list = map.get(label) || []
+    list.push(skill)
+    map.set(label, list)
+  }
+  return [...map.entries()].map(([label, items]) => ({ label, items }))
+})
 const sections = computed(() => normalizeSections(props.resume?.sections))
 const showProfile = computed(() => sections.value.profile)
 const showObjective = computed(() => sections.value.objective)
@@ -258,6 +283,26 @@ const labels = computed(() => getLabels(locale.value))
 const placeholderName = computed(() =>
   locale.value === 'en' ? 'Your name' : 'Votre nom',
 )
+function yearOf(value?: string | null) {
+  if (!value) return ''
+  const match = String(value).match(/^(\d{4})/)
+  if (match) return match[1]
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return String(date.getFullYear())
+}
+
+function experienceYears(item: Experience) {
+  const from = yearOf(item.startDate)
+  const to = item.currentJob
+    ? locale.value === 'en'
+      ? 'Present'
+      : 'Présent'
+    : yearOf(item.endDate)
+  if (from && to) return `${from} – ${to}`
+  return from || to
+}
+
 const photoSrc = computed(() => {
   if (!meta.value.showsPhoto) return ''
   return mediaUrl(personal.value?.photoUrl)
@@ -372,6 +417,15 @@ const contactList = computed(
   border-left: 2px solid var(--cv-line);
   padding-left: 1rem;
   margin-left: 0.25rem;
+}
+.cv-bullets {
+  margin: 0.25rem 0 0 1.1rem;
+  padding: 0;
+  list-style: disc;
+}
+.cv-bullets li {
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 .elegant-name {
   font-family: Georgia, 'Times New Roman', serif;

@@ -3,75 +3,40 @@
     <section v-if="showExperience && experiences.length" class="mb-6">
       <h2 :class="titleClass" :style="titleStyle">{{ labels.experience }}</h2>
       <div v-for="item in experiences" :key="item.id" class="mb-4">
-        <div class="flex flex-wrap justify-between gap-2">
-          <p class="font-semibold">
-            {{ item.jobTitle }}
-            <span v-if="!ats" class="font-normal text-muted"> — {{ item.company }}</span>
-          </p>
-          <p v-if="!ats" class="text-xs text-muted">
-            {{ formatPeriod(item.startDate, item.endDate, item.currentJob) }}
-          </p>
-        </div>
-        <p v-if="ats" class="text-sm text-muted mb-1">
-          {{
-            [item.company, formatPeriod(item.startDate, item.endDate, item.currentJob), item.location]
-              .filter(Boolean)
-              .join(' | ')
-          }}
+        <p class="text-sm leading-relaxed">
+          <span v-if="experiencePeriod(item)" class="font-semibold">{{ experiencePeriod(item) }} : </span>
+          <span class="font-semibold">{{ item.jobTitle }}</span>
+          <span v-if="item.company" class="italic"> — {{ item.company }}</span>
+          <span v-if="item.location" class="text-muted">, {{ item.location }}</span>
         </p>
-        <p v-else-if="item.location" class="text-xs text-muted mb-1">{{ item.location }}</p>
-        <p v-if="item.description" class="text-sm whitespace-pre-wrap">{{ item.description }}</p>
+        <ul v-if="lines(item.description).length" class="cv-bullets">
+          <li v-for="(line, index) in lines(item.description)" :key="index">{{ line }}</li>
+        </ul>
       </div>
     </section>
 
     <section v-if="showEducation && educations.length" class="mb-6">
       <h2 :class="titleClass" :style="titleStyle">{{ labels.education }}</h2>
-      <div v-for="item in educations" :key="item.id" class="mb-4">
-        <div class="flex flex-wrap justify-between gap-2">
-          <p class="font-semibold">
-            {{ item.degree }}
-            <span v-if="!ats" class="font-normal text-muted"> — {{ item.institution }}</span>
-          </p>
-          <p v-if="!ats" class="text-xs text-muted">
-            {{ formatPeriod(item.startDate, item.endDate, item.currentEducation) }}
-          </p>
-        </div>
-        <p v-if="ats" class="text-sm text-muted mb-1">
-          {{
-            [
-              item.institution,
-              formatPeriod(item.startDate, item.endDate, item.currentEducation),
-              item.location,
-            ]
-              .filter(Boolean)
-              .join(' | ')
-          }}
+      <div v-for="item in educations" :key="item.id" class="mb-3">
+        <p class="text-sm leading-relaxed">
+          <span v-if="educationPeriod(item)" class="font-semibold">{{ educationPeriod(item) }} : </span>
+          <span class="font-semibold">{{ item.degree }}</span>
+          <span v-if="item.institution" class="italic"> — {{ item.institution }}</span>
+          <span v-if="item.location">, {{ item.location }}</span>
+          <span v-if="mention(item.description)"> ({{ mention(item.description) }})</span>
         </p>
-        <p v-if="item.description" class="text-sm whitespace-pre-wrap">{{ item.description }}</p>
+        <ul v-if="detailLines(item.description).length" class="cv-bullets">
+          <li v-for="(line, index) in detailLines(item.description)" :key="index">{{ line }}</li>
+        </ul>
       </div>
     </section>
 
-    <section v-if="!hideSkills && showSkills && skills.length">
+    <section v-if="!hideSkills && showSkills && skills.length" class="mb-6">
       <h2 :class="titleClass" :style="titleStyle">{{ labels.skills }}</h2>
-      <template v-if="minimal || ats">
-        <p class="text-sm">
-          {{ skills.map((s) => s.name).join(ats ? ', ' : '   ·   ') }}
-        </p>
-      </template>
-      <template v-else>
-        <div v-for="group in skillGroups" :key="group.label" class="mb-3">
-          <p class="text-sm font-semibold mb-1">{{ group.label }}</p>
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="skill in group.items"
-              :key="skill.id"
-              class="text-xs px-2.5 py-1 rounded-md bg-[var(--cv-paper)] border border-[var(--cv-line)]"
-            >
-              {{ skill.name }}
-            </span>
-          </div>
-        </div>
-      </template>
+      <p v-for="group in skillGroups" :key="group.label" class="text-sm leading-relaxed mb-2">
+        <span class="font-semibold">{{ group.label }} :</span>
+        {{ group.items.map((skill) => skill.name).join(', ') }}.
+      </p>
     </section>
 
     <section
@@ -89,13 +54,22 @@
       <p v-else-if="group.key === 'interests'" class="text-sm">
         {{ group.items.map((i) => i.title).join('  ·  ') }}
       </p>
+      <div v-else-if="group.key === 'projects'">
+        <p v-for="item in group.items" :key="item.id" class="text-sm leading-relaxed mb-2">
+          <span class="font-semibold">{{ item.title }} :</span>
+          {{ [item.subtitle, item.description].filter(Boolean).join(' — ') }}
+        </p>
+      </div>
       <div v-else>
         <div v-for="item in group.items" :key="item.id" class="mb-3">
-          <p class="font-semibold text-sm">{{ item.title }}</p>
-          <p class="text-xs text-muted">
-            {{ [item.subtitle, item.dateLabel].filter(Boolean).join(' · ') }}
+          <p class="text-sm leading-relaxed">
+            <span v-if="item.dateLabel" class="font-semibold">{{ item.dateLabel }} : </span>
+            <span class="font-semibold">{{ item.title }}</span>
+            <span v-if="item.subtitle" class="italic"> — {{ item.subtitle }}</span>
           </p>
-          <p v-if="item.description" class="text-sm whitespace-pre-wrap">{{ item.description }}</p>
+          <ul v-if="lines(item.description).length" class="cv-bullets">
+            <li v-for="(line, index) in lines(item.description)" :key="index">{{ line }}</li>
+          </ul>
         </div>
       </div>
     </section>
@@ -186,22 +160,64 @@ const extraGroups = computed(() => {
     .filter((d) => d.items.length)
 })
 
-function formatPeriod(
+function yearOf(value?: string | null) {
+  if (!value) return ''
+  const match = String(value).match(/^(\d{4})/)
+  if (match) return match[1]
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return String(date.getFullYear())
+}
+
+function yearPeriod(
   start?: string | null,
   end?: string | null,
   current?: boolean,
+  currentLabel?: string,
 ) {
-  const loc = props.locale === 'en' ? 'en-GB' : 'fr-FR'
-  const fmt = (value?: string | null) => {
-    if (!value) return ''
-    return new Date(value).toLocaleDateString(loc, {
-      month: 'short',
-      year: 'numeric',
-    })
-  }
-  const from = fmt(start) || '?'
-  const to = current ? props.labels.today : fmt(end)
-  return to ? `${from} – ${to}` : from
+  const from = yearOf(start)
+  const to = current ? currentLabel || '' : yearOf(end)
+  if (from && to) return `${from} – ${to}`
+  return from || to
+}
+
+function experiencePeriod(item: { startDate?: string | null; endDate?: string | null; currentJob?: boolean }) {
+  return yearPeriod(
+    item.startDate,
+    item.endDate,
+    item.currentJob,
+    props.locale === 'en' ? 'Present' : 'Présent',
+  )
+}
+
+function educationPeriod(item: {
+  startDate?: string | null
+  endDate?: string | null
+  currentEducation?: boolean
+}) {
+  return yearPeriod(
+    item.startDate,
+    item.endDate,
+    item.currentEducation,
+    props.locale === 'en' ? 'Ongoing' : 'En cours',
+  )
+}
+
+function lines(value?: string | null) {
+  return (value || '')
+    .split(/\n+/)
+    .map((line) => line.replace(/^[-•]\s*/, '').trim())
+    .filter(Boolean)
+}
+
+function mention(value?: string | null) {
+  const parts = lines(value)
+  if (parts.length === 1 && parts[0].length <= 80) return parts[0]
+  return ''
+}
+
+function detailLines(value?: string | null) {
+  return mention(value) ? [] : lines(value)
 }
 </script>
 
@@ -231,5 +247,14 @@ function formatPeriod(
   letter-spacing: 0.14em;
   color: #6b7280;
   margin-bottom: 0.75rem;
+}
+.cv-bullets {
+  margin: 0.25rem 0 0 1.1rem;
+  padding: 0;
+  list-style: disc;
+}
+.cv-bullets li {
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 </style>

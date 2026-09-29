@@ -19,8 +19,10 @@ import {
   contactParts,
   drawFooter,
   ensureSpace,
+  bulletLines,
   formatPeriod,
   labelsFor,
+  yearPeriod,
   resolvePhotoPath,
   sectionTitle,
   skillCategoryLabel,
@@ -283,8 +285,10 @@ export class GenerateService {
         });
       sideY = doc.y + 8;
       doc.font('Helvetica').fontSize(8).fillColor('#e8f1f3');
-      for (const skill of data.skills.filter((s) => s.category !== 'LANGUAGE')) {
-        doc.text(`• ${skill.name}`, 20, sideY, { width: sidebarW - 40 });
+      for (const [label, items] of this.skillLines(labels, data.skills)) {
+        doc.text(`${label} : ${items.join(', ')}.`, 20, sideY, {
+          width: sidebarW - 40,
+        });
         sideY = doc.y + 4;
       }
     }
@@ -796,8 +800,8 @@ export class GenerateService {
         .text(labels.skills.toUpperCase(), 48, leftY, { width: leftW });
       leftY = doc.y + 6;
       doc.font('Helvetica').fontSize(8).fillColor('#333');
-      for (const skill of data.skills.filter((s) => s.category !== 'LANGUAGE')) {
-        doc.text(`• ${skill.name}`, 48, leftY, { width: leftW });
+      for (const [label, items] of this.skillLines(labels, data.skills)) {
+        doc.text(`${label} : ${items.join(', ')}.`, 48, leftY, { width: leftW });
         leftY = doc.y + 3;
       }
     }
@@ -1110,17 +1114,27 @@ export class GenerateService {
       }
       for (const item of items) {
         ensureSpace(doc, 45);
-        doc.font('Helvetica-Bold').fontSize(10).fillColor('#222').text(item.title);
-        const meta = [item.subtitle, item.dateLabel].filter(Boolean).join(' · ');
-        if (meta) {
-          doc.font('Helvetica').fontSize(9).fillColor(muted).text(meta);
-        }
-        if (item.description) {
+        if (group.key === 'projects') {
+          const detail = [item.subtitle, item.description].filter(Boolean).join(' — ');
           doc
+            .font('Helvetica-Bold')
+            .fontSize(10)
+            .fillColor('#222')
+            .text(item.title, { continued: Boolean(detail) })
             .font('Helvetica')
-            .fontSize(9.5)
-            .fillColor('#333')
-            .text(item.description);
+            .text(detail ? ` : ${detail}` : '');
+          doc.moveDown(0.35);
+          continue;
+        }
+        const period = item.dateLabel?.trim();
+        const head = [item.title, item.subtitle].filter(Boolean).join(' — ');
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(10)
+          .fillColor('#222')
+          .text(period ? `${period} : ${head}` : head);
+        for (const line of bulletLines(item.description)) {
+          doc.font('Helvetica').fontSize(9.5).fillColor('#333').text(`• ${line}`);
         }
         doc.moveDown(0.4);
       }
@@ -1137,61 +1151,28 @@ export class GenerateService {
     if (!this.sectionOn(data, 'experience') || !data.experiences.length) return;
     const labels = labelsFor(data);
     sectionTitle(doc, labels.experience, accent);
+    const present = data.locale === 'en' ? 'Present' : 'Présent';
     for (const exp of data.experiences) {
       ensureSpace(doc, 70);
-      if (ats) {
-        doc.font('Helvetica-Bold').fontSize(11).fillColor(accent).text(exp.jobTitle);
-        doc
-          .font('Helvetica')
-          .fontSize(10)
-          .fillColor(muted)
-          .text(
-            [
-              exp.company,
-              formatPeriod(
-                labels,
-                data.locale,
-                exp.startDate,
-                exp.endDate,
-                exp.currentJob,
-              ),
-              exp.location,
-            ]
-              .filter(Boolean)
-              .join(' | '),
-          );
-      } else {
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(11)
-          .fillColor('#222')
-          .text(exp.jobTitle, { continued: true })
-          .font('Helvetica')
-          .fillColor(muted)
-          .text(`  —  ${exp.company}`);
-        const meta = [
-          formatPeriod(
-            labels,
-            data.locale,
-            exp.startDate,
-            exp.endDate,
-            exp.currentJob,
-          ),
-          exp.location,
-        ]
-          .filter(Boolean)
-          .join(' · ');
-        if (meta) {
-          doc.font('Helvetica').fontSize(9).fillColor(muted).text(meta);
+      const period = yearPeriod(
+        exp.startDate,
+        exp.endDate,
+        exp.currentJob,
+        present,
+      );
+      const place = [exp.company, exp.location].filter(Boolean).join(', ');
+      const title = place ? `${exp.jobTitle} — ${place}` : exp.jobTitle;
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(ats ? 11 : 10)
+        .fillColor(ats ? accent : '#222')
+        .text(period ? `${period} : ${title}` : title);
+      const lines = bulletLines(exp.description);
+      if (lines.length) {
+        doc.moveDown(0.15);
+        for (const line of lines) {
+          doc.font('Helvetica').fontSize(10).fillColor('#333').text(`• ${line}`);
         }
-      }
-      if (exp.description) {
-        doc
-          .moveDown(0.2)
-          .font('Helvetica')
-          .fontSize(10)
-          .fillColor('#333')
-          .text(exp.description, { lineGap: 1.5 });
       }
       doc.moveDown(0.55);
     }
@@ -1207,64 +1188,47 @@ export class GenerateService {
     if (!this.sectionOn(data, 'education') || !data.educations.length) return;
     const labels = labelsFor(data);
     sectionTitle(doc, labels.education, accent);
+    const ongoing = data.locale === 'en' ? 'Ongoing' : 'En cours';
     for (const edu of data.educations) {
       ensureSpace(doc, 55);
-      if (ats) {
-        doc.font('Helvetica-Bold').fontSize(11).fillColor(accent).text(edu.degree);
-        doc
-          .font('Helvetica')
-          .fontSize(10)
-          .fillColor(muted)
-          .text(
-            [
-              edu.institution,
-              formatPeriod(
-                labels,
-                data.locale,
-                edu.startDate,
-                edu.endDate,
-                edu.currentEducation,
-              ),
-              edu.location,
-            ]
-              .filter(Boolean)
-              .join(' | '),
-          );
-      } else {
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(11)
-          .fillColor('#222')
-          .text(edu.degree, { continued: true })
-          .font('Helvetica')
-          .fillColor(muted)
-          .text(`  —  ${edu.institution}`);
-        const meta = [
-          formatPeriod(
-            labels,
-            data.locale,
-            edu.startDate,
-            edu.endDate,
-            edu.currentEducation,
-          ),
-          edu.location,
-        ]
-          .filter(Boolean)
-          .join(' · ');
-        if (meta) {
-          doc.font('Helvetica').fontSize(9).fillColor(muted).text(meta);
+      const period = yearPeriod(
+        edu.startDate,
+        edu.endDate,
+        edu.currentEducation,
+        ongoing,
+      );
+      const place = [edu.institution, edu.location].filter(Boolean).join(', ');
+      const lines = bulletLines(edu.description);
+      const mention = lines.length === 1 && lines[0].length <= 80 ? lines[0] : '';
+      const degree = mention ? `${edu.degree} (${mention})` : edu.degree;
+      const title = place ? `${degree} — ${place}` : degree;
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(ats ? 11 : 10)
+        .fillColor(ats ? accent : '#222')
+        .text(period ? `${period} : ${title}` : title);
+      if (!mention) {
+        for (const line of lines) {
+          doc.font('Helvetica').fontSize(10).fillColor('#333').text(`• ${line}`);
         }
-      }
-      if (edu.description) {
-        doc
-          .moveDown(0.15)
-          .font('Helvetica')
-          .fontSize(10)
-          .fillColor('#333')
-          .text(edu.description);
       }
       doc.moveDown(0.5);
     }
+  }
+
+  private skillLines(
+    labels: ReturnType<typeof labelsFor>,
+    skills: ResumePdfData['skills'],
+  ) {
+    const byCategory = new Map<string, string[]>();
+    for (const skill of skills) {
+      if (skill.category === 'LANGUAGE') continue;
+      const label = skillCategoryLabel(labels, skill.category);
+      const list = byCategory.get(label) ?? [];
+      list.push(skill.name);
+      byCategory.set(label, list);
+    }
+    return byCategory;
   }
 
   private writeSkills(
@@ -1302,8 +1266,10 @@ export class GenerateService {
         .font('Helvetica-Bold')
         .fontSize(10)
         .fillColor('#222')
-        .text(skillCategoryLabel(labels, category));
-      doc.font('Helvetica').fontSize(10).fillColor('#333').text(items.join('  ·  '));
+        .text(`${skillCategoryLabel(labels, category)} : `, { continued: true })
+        .font('Helvetica')
+        .fillColor('#333')
+        .text(`${items.join(', ')}.`);
       doc.moveDown(0.35);
     }
   }

@@ -68,6 +68,26 @@ export function resolvePhotoPath(photoUrl?: string | null): string | null {
   return null;
 }
 
+export function yearPeriod(
+  start: Date | null,
+  end: Date | null,
+  current: boolean,
+  currentLabel: string,
+) {
+  const year = (value: Date | null) => (value ? String(value.getFullYear()) : '');
+  const from = year(start);
+  const to = current ? currentLabel : year(end);
+  if (from && to) return `${from} – ${to}`;
+  return from || to;
+}
+
+export function bulletLines(value?: string | null) {
+  return (value || '')
+    .split(/\n+/)
+    .map((line) => line.replace(/^[-•]\s*/, '').trim())
+    .filter(Boolean);
+}
+
 export function formatPeriod(
   labels: CvLabels,
   locale: string,
