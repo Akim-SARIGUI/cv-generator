@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { SkillCategory } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSkillDto, UpdateSkillDto } from './dto/skill.dto';
@@ -61,9 +62,9 @@ export class SkillService {
       where: { id: resumeId },
       select: { userId: true },
     });
-    if (!resume) throw new NotFoundException('CV introuvable');
+    if (!resume) throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     if (resume.userId !== userId) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
   }
 
@@ -72,6 +73,6 @@ export class SkillService {
     const item = await this.prisma.skill.findFirst({
       where: { id, resumeId },
     });
-    if (!item) throw new NotFoundException('Compétence introuvable');
+    if (!item) throw coded(NotFoundException, 'SKILL_NOT_FOUND');
   }
 }

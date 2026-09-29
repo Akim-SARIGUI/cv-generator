@@ -5,6 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { mkdirSync } from 'fs';
 import { join } from 'path';
 import { AppModule } from './app.module';
+import { validationException } from './common/coded-exception';
 import { uploadsRoot } from './common/uploads-path';
 
 async function bootstrap() {
@@ -22,6 +23,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: validationException,
     }),
   );
 

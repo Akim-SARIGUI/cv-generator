@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -45,14 +46,12 @@ export class AdminService {
 
   async setRole(actorId: string, userId: string, role: UserRole) {
     if (actorId === userId && role !== UserRole.ADMIN) {
-      throw new BadRequestException(
-        'Vous ne pouvez pas retirer votre propre rôle administrateur',
-      );
+      throw coded(BadRequestException, 'ADMIN_SELF_DEMOTE');
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException('Utilisateur introuvable');
+      throw coded(NotFoundException, 'USER_NOT_FOUND');
     }
 
     if (user.role === UserRole.ADMIN && role === UserRole.USER) {
@@ -68,14 +67,12 @@ export class AdminService {
 
   async removeUser(actorId: string, userId: string) {
     if (actorId === userId) {
-      throw new BadRequestException(
-        'Vous ne pouvez pas supprimer votre propre compte depuis l’administration',
-      );
+      throw coded(BadRequestException, 'ADMIN_SELF_DELETE');
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException('Utilisateur introuvable');
+      throw coded(NotFoundException, 'USER_NOT_FOUND');
     }
 
     if (user.role === UserRole.ADMIN) {
@@ -91,7 +88,7 @@ export class AdminService {
       where: { role: UserRole.ADMIN },
     });
     if (admins <= 1) {
-      throw new BadRequestException('Impossible de retirer le dernier administrateur');
+      throw coded(BadRequestException, 'ADMIN_LAST');
     }
   }
 }

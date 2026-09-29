@@ -3,6 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
@@ -38,7 +39,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException('Email ou nom d’utilisateur déjà utilisé');
+      throw coded(ConflictException, 'EMAIL_TAKEN');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
@@ -77,12 +78,12 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Identifiants invalides');
+      throw coded(UnauthorizedException, 'INVALID_CREDENTIALS');
     }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
-      throw new UnauthorizedException('Identifiants invalides');
+      throw coded(UnauthorizedException, 'INVALID_CREDENTIALS');
     }
 
     const role = this.roleFor(user.email);

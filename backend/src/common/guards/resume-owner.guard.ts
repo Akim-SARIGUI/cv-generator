@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../decorators/current-user.decorator';
+import { coded } from '../coded-exception';
 
 @Injectable()
 export class ResumeOwnerGuard implements CanActivate {
@@ -14,7 +15,7 @@ export class ResumeOwnerGuard implements CanActivate {
 
     const resumeId = request.params.resumeId ?? request.params.id;
     if (!resumeId) {
-      throw new ForbiddenException('Resume ID requis');
+      throw coded(ForbiddenException, 'RESUME_ID_REQUIRED');
     }
 
     const resume = await this.prisma.resume.findUnique({
@@ -23,11 +24,11 @@ export class ResumeOwnerGuard implements CanActivate {
     });
 
     if (!resume) {
-      throw new NotFoundException('CV introuvable');
+      throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     }
 
     if (resume.userId !== request.user.id) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
 
     return true;

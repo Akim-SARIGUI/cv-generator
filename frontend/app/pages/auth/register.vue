@@ -31,11 +31,10 @@
 </template>
 
 <script setup lang="ts">
-import { apiErrorMessage } from '~/utils/api-error'
-
 definePageMeta({ layout: false })
 
 const { register } = useAuth()
+const { te } = useUiI18n()
 const username = ref('')
 const email = ref('')
 const password = ref('')
@@ -53,7 +52,7 @@ async function onSubmit() {
     })
     await navigateTo('/dashboard')
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Inscription impossible', 'Impossible de joindre le serveur. Réessayez dans un instant.')
+    error.value = te(e, 'errRegister')
   } finally {
     loading.value = false
   }

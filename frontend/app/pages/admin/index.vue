@@ -110,7 +110,6 @@
 
 <script setup lang="ts">
 import type { UserRole } from '~/types/cv'
-import { apiErrorMessage } from '~/utils/api-error'
 
 type AdminUser = {
   id: string
@@ -127,7 +126,7 @@ type Overview = {
   admins: number
 }
 
-const { t, locale } = useUiI18n()
+const { t, te, locale } = useUiI18n()
 const { user } = useAuth()
 const { api } = useApi()
 
@@ -156,7 +155,7 @@ async function load() {
     overview.value = stats
     users.value = accounts
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Impossible de charger l’administration')
+    error.value = te(e, 'errAdminLoad')
   } finally {
     loading.value = false
   }
@@ -169,7 +168,7 @@ async function setRole(id: string, role: UserRole) {
     await api(`/admin/users/${id}/role`, { method: 'PATCH', body: { role } })
     await load()
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Impossible de modifier le rôle')
+    error.value = te(e, 'errAdminRole')
   } finally {
     busyId.value = ''
   }
@@ -190,7 +189,7 @@ async function confirmDelete() {
     pending.value = null
     await load()
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Impossible de supprimer ce compte')
+    error.value = te(e, 'errAdminDelete')
   } finally {
     busyId.value = ''
   }

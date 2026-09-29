@@ -30,11 +30,10 @@
 </template>
 
 <script setup lang="ts">
-import { apiErrorMessage } from '~/utils/api-error'
-
 definePageMeta({ layout: false })
 
 const { login } = useAuth()
+const { te } = useUiI18n()
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -47,7 +46,7 @@ async function onSubmit() {
     await login(email.value, password.value)
     await navigateTo('/dashboard')
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Connexion impossible', 'Impossible de joindre le serveur. Réessayez dans un instant.')
+    error.value = te(e, 'errLogin')
   } finally {
     loading.value = false
   }

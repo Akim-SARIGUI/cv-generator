@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import PDFDocument = require('pdfkit');
 import type { Response } from 'express';
 import type PDFKit from 'pdfkit';
@@ -134,9 +135,9 @@ export class GenerateService {
         extras: { orderBy: [{ kind: 'asc' }, { sortOrder: 'asc' }] },
       },
     });
-    if (!resume) throw new NotFoundException('CV introuvable');
+    if (!resume) throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     if (resume.userId !== userId) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
     return resume;
   }

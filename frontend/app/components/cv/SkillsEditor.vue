@@ -2,10 +2,8 @@
   <v-card border class="pa-4 md:pa-6">
     <div class="d-flex flex-wrap align-center justify-space-between gap-3 mb-4">
       <div>
-        <h2 class="font-display text-xl">Compétences</h2>
-        <p class="text-sm text-muted">
-          Ajoutez des compétences par catégorie (sans note 1–5) — format pro / ATS
-        </p>
+        <h2 class="font-display text-xl">{{ t('tabSkills') }}</h2>
+        <p class="text-sm text-muted">{{ t('hintSkills') }}</p>
       </div>
     </div>
 
@@ -18,7 +16,7 @@
         <v-col cols="12" md="5">
           <v-text-field
             v-model="draftName"
-            label="Compétence *"
+            :label="t('labelSkill')"
             placeholder="Ex. Vue.js, Docker, Leadership…"
             hide-details="auto"
             @keyup.enter="addOne"
@@ -30,23 +28,23 @@
             :items="categories"
             item-title="title"
             item-value="value"
-            label="Catégorie"
+            :label="t('labelCategory')"
             hide-details="auto"
           />
         </v-col>
         <v-col cols="12" md="3">
           <v-btn color="primary" block :loading="busy" prepend-icon="mdi-plus" @click="addOne">
-            Ajouter
+            {{ t('btnAdd') }}
           </v-btn>
         </v-col>
       </v-row>
       <p class="text-xs text-muted mt-2">
-        Astuce : validez avec Entrée. Les langues se gèrent dans l’onglet Langues.
+        {{ t('infoSkillHint') }}
       </p>
     </div>
 
     <div v-if="!visibleSkills.length" class="text-muted text-sm">
-      Aucune compétence pour le moment.
+      {{ t('emptySkills') }}
     </div>
 
     <div v-for="group in grouped" :key="group.value" class="mb-5">
@@ -72,6 +70,7 @@
 <script setup lang="ts">
 import type { Skill, SkillCategory } from '~/types/cv'
 
+const { t, te } = useUiI18n()
 const { resume, addSkill, removeSkill } = useResume()
 
 const busy = ref(false)
@@ -79,19 +78,19 @@ const errorMsg = ref('')
 const draftName = ref('')
 const draftCategory = ref<SkillCategory>('TECHNICAL')
 
-const categories = [
-  { title: 'Technique', value: 'TECHNICAL' },
-  { title: 'Outil', value: 'TOOL' },
-  { title: 'Soft skill', value: 'SOFT' },
-  { title: 'Autre', value: 'OTHER' },
-]
+const categories = computed(() => [
+  { title: t('skillCatTechnical'), value: 'TECHNICAL' as const },
+  { title: t('skillCatTool'), value: 'TOOL' as const },
+  { title: t('skillCatSoft'), value: 'SOFT' as const },
+  { title: t('skillCatOther'), value: 'OTHER' as const },
+])
 
 const visibleSkills = computed(() =>
   (resume.value?.skills || []).filter((s) => s.category !== 'LANGUAGE'),
 )
 
 const grouped = computed(() =>
-  categories
+  categories.value
     .map((cat) => ({
       ...cat,
       items: visibleSkills.value.filter((s) => s.category === cat.value),
@@ -103,14 +102,14 @@ async function addOne() {
   errorMsg.value = ''
   const name = draftName.value.trim()
   if (!name) {
-    errorMsg.value = 'Indiquez une compétence'
+    errorMsg.value = t('infoSkillRequired')
     return
   }
   const exists = visibleSkills.value.some(
     (s) => s.name.toLowerCase() === name.toLowerCase() && s.category === draftCategory.value,
   )
   if (exists) {
-    errorMsg.value = 'Cette compétence existe déjà dans cette catégorie'
+    errorMsg.value = t('infoSkillDuplicate')
     return
   }
   busy.value = true
@@ -122,10 +121,7 @@ async function addOne() {
     })
     draftName.value = ''
   } catch (e: unknown) {
-    const msg =
-      (e as { data?: { message?: string | string[] } })?.data?.message ||
-      'Échec de l’ajout'
-    errorMsg.value = Array.isArray(msg) ? msg.join(', ') : String(msg)
+    errorMsg.value = te(e, 'infoAddFailed')
   } finally {
     busy.value = false
   }

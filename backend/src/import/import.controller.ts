@@ -8,6 +8,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -33,7 +34,7 @@ export class ImportController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
-      throw new BadRequestException('Fichier requis (champ "file")');
+      throw coded(BadRequestException, 'FILE_REQUIRED');
     }
     return this.importService.parseUpload(user.id, resumeId, file);
   }

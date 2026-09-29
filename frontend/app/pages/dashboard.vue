@@ -130,9 +130,8 @@
 
 <script setup lang="ts">
 import type { Resume } from '~/types/cv'
-import { apiErrorMessage } from '~/utils/api-error'
 
-const { t, locale } = useUiI18n()
+const { t, te, locale } = useUiI18n()
 const { user } = useAuth()
 const { api } = useApi()
 
@@ -178,7 +177,7 @@ async function load() {
   try {
     resumes.value = await api<Resume[]>('/resumes')
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Impossible de charger le tableau de bord')
+    error.value = te(e, 'errDashLoad')
   } finally {
     loading.value = false
   }
@@ -199,7 +198,7 @@ async function createResume() {
     createOpen.value = false
     await navigateTo(`/editor?id=${created.id}`)
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Impossible de créer le CV')
+    error.value = te(e, 'errDashCreate')
   } finally {
     creating.value = false
   }
@@ -212,7 +211,7 @@ async function makeDefault(id: string) {
     await api(`/resumes/${id}`, { method: 'PATCH', body: { isDefault: true } })
     await load()
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Impossible de mettre ce CV par défaut')
+    error.value = te(e, 'errDashDefault')
   } finally {
     busyId.value = ''
   }
@@ -233,7 +232,7 @@ async function confirmDelete() {
     pendingDelete.value = null
     await load()
   } catch (e: unknown) {
-    error.value = apiErrorMessage(e, 'Impossible de supprimer ce CV')
+    error.value = te(e, 'errDashDelete')
   } finally {
     creating.value = false
   }

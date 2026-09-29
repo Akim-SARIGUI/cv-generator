@@ -57,7 +57,7 @@ export function useResume() {
       await refreshLocalized()
       return resume.value
     } catch (e: unknown) {
-      error.value = 'Impossible de charger le CV'
+      error.value = 'RESUME_LOAD'
       throw e
     } finally {
       loading.value = false

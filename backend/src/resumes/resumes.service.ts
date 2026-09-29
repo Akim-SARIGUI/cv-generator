@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateResumeDto, UpdateResumeDto } from './dto/resume.dto';
 import { normalizeSections } from '../common/sections';
@@ -44,10 +45,10 @@ export class ResumesService {
     });
 
     if (!resume) {
-      throw new NotFoundException('CV introuvable');
+      throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     }
     if (resume.userId !== userId) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
 
     return resume;
@@ -68,7 +69,7 @@ export class ResumesService {
     });
 
     if (!fallback) {
-      throw new NotFoundException('Aucun CV trouvé');
+      throw coded(NotFoundException, 'RESUME_NONE');
     }
 
     return fallback;
@@ -123,7 +124,7 @@ export class ResumesService {
     await this.assertOwner(userId, resumeId);
     const count = await this.prisma.resume.count({ where: { userId } });
     if (count <= 1) {
-      throw new ForbiddenException('Impossible de supprimer le dernier CV');
+      throw coded(ForbiddenException, 'RESUME_LAST');
     }
     await this.prisma.resume.delete({ where: { id: resumeId } });
     return { deleted: true };
@@ -134,9 +135,9 @@ export class ResumesService {
       where: { id: resumeId },
       select: { userId: true },
     });
-    if (!resume) throw new NotFoundException('CV introuvable');
+    if (!resume) throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     if (resume.userId !== userId) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
   }
 }

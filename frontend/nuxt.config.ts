@@ -1,3 +1,5 @@
+import { en, fr } from 'vuetify/locale'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -36,6 +38,11 @@ export default defineNuxtConfig({
             },
           },
         },
+      },
+      locale: {
+        locale: 'fr',
+        fallback: 'fr',
+        messages: { fr, en },
       },
       defaults: {
         VBtn: { rounded: 'lg', elevation: 0 },

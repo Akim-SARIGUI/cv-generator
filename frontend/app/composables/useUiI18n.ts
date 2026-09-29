@@ -1,3 +1,4 @@
+import { apiErrorMessage } from '~/utils/api-error'
 import { resolveLocale, type CvLocale } from '~/utils/cv-templates'
 
 const messages = {
@@ -143,6 +144,92 @@ const messages = {
     adminYou: 'Vous',
     adminEmpty: 'Aucun utilisateur.',
     adminRecent: 'Inscriptions récentes',
+    btnSave: 'Enregistrer',
+    btnAdd: 'Ajouter',
+    btnRemove: 'Retirer',
+    btnEdit: 'Modifier',
+    infoProfileSaved: 'Profil enregistré',
+    infoSaveFailed: 'Échec de l’enregistrement',
+    infoAddFailed: 'Échec de l’ajout',
+    infoPhotoSaved: 'Photo enregistrée',
+    infoPhotoFailed: 'Échec de l’envoi (JPG, PNG ou WebP, 2 Mo maximum)',
+    infoPhotoRemoved: 'Photo retirée',
+    infoPhotoRemoveFailed: 'Impossible de retirer la photo',
+    infoPhotoPortrait: 'Photo portrait',
+    infoPhotoHint: 'JPG, PNG ou WebP · 2 Mo maximum',
+    infoPhotoHidden: 'Masquée sur le modèle américain / ATS',
+    infoJobRequired: 'Le poste et l’entreprise sont obligatoires',
+    infoDegreeRequired: 'Le diplôme et l’établissement sont obligatoires',
+    infoSkillHint: 'Astuce : validez avec Entrée. Les langues se gèrent dans l’onglet Langues.',
+    labelSkill: 'Compétence *',
+    labelCategory: 'Catégorie',
+    skillCatTechnical: 'Technique',
+    skillCatTool: 'Outil',
+    skillCatSoft: 'Savoir-être',
+    skillCatOther: 'Autre',
+    infoSkillRequired: 'Indiquez une compétence',
+    infoSkillDuplicate: 'Cette compétence existe déjà dans cette catégorie',
+    infoLanguageRequired: 'Indiquez une langue',
+    infoTitleRequired: 'Le titre est obligatoire',
+    infoNoDescription: 'Sans description',
+    hintExperience: 'Ajoutez et modifiez vos postes un par un',
+    hintEducation: 'Diplômes et parcours scolaire ou universitaire',
+    hintLanguages: 'Niveaux selon le cadre européen (CECR)',
+    hintSkills: 'Ajoutez des compétences par catégorie, sans note de 1 à 5',
+    emptySkills: 'Aucune compétence pour le moment.',
+    dialogExpEdit: 'Modifier l’expérience',
+    dialogExpNew: 'Nouvelle expérience',
+    dialogEduEdit: 'Modifier la formation',
+    dialogEduNew: 'Nouvelle formation',
+    dialogLangEdit: 'Modifier la langue',
+    dialogLangNew: 'Ajouter une langue',
+    emptyExperience: 'Aucune expérience pour le moment.',
+    emptyEducation: 'Aucune formation pour le moment.',
+    emptyLanguages: 'Aucune langue pour le moment.',
+    emptyItems: 'Aucun élément pour le moment.',
+    errNetwork: 'Impossible de joindre le serveur. Réessayez dans un instant.',
+    errRegister: 'Inscription impossible',
+    errLogin: 'Connexion impossible',
+    errDashLoad: 'Impossible de charger le tableau de bord',
+    errDashCreate: 'Impossible de créer le CV',
+    errDashDefault: 'Impossible de définir ce CV par défaut',
+    errDashDelete: 'Impossible de supprimer ce CV',
+    errAdminLoad: 'Impossible de charger l’administration',
+    errAdminRole: 'Impossible de modifier le rôle',
+    errAdminDelete: 'Impossible de supprimer ce compte',
+    errResumeLoad: 'Impossible de charger le CV',
+    errInvalid: 'Information invalide',
+    errEmailTaken: 'Email ou nom d’utilisateur déjà utilisé',
+    errInvalidCredentials: 'Identifiants invalides',
+    errUserNotFound: 'Utilisateur introuvable',
+    errResumeNotFound: 'CV introuvable',
+    errResumeForbidden: 'Accès non autorisé à ce CV',
+    errResumeNone: 'Aucun CV trouvé',
+    errResumeLast: 'Impossible de supprimer le dernier CV',
+    errResumeIdRequired: 'Identifiant de CV requis',
+    errEducationNotFound: 'Formation introuvable',
+    errExperienceNotFound: 'Expérience introuvable',
+    errExtraNotFound: 'Entrée introuvable',
+    errSkillNotFound: 'Compétence introuvable',
+    errPersonalNotFound: 'Informations personnelles introuvables',
+    errFileMissing: 'Aucun fichier envoyé',
+    errFileRequired: 'Fichier requis',
+    errFileTooLarge: 'Fichier trop volumineux (8 Mo maximum)',
+    errPhotoFormat: 'Formats acceptés : JPG, PNG ou WebP',
+    errPhotoTooLarge: 'Image trop lourde (2 Mo maximum)',
+    errDocUnsupported: 'Le format .doc n’est pas pris en charge. Enregistrez le fichier en PDF ou DOCX.',
+    errFormatUnsupported: 'Format non pris en charge. Utilisez un PDF, un DOCX ou un TXT.',
+    errAdminSelfDemote: 'Vous ne pouvez pas retirer votre propre rôle d’administrateur',
+    errAdminSelfDelete: 'Vous ne pouvez pas supprimer votre propre compte depuis l’administration',
+    errAdminLast: 'Impossible de retirer le dernier administrateur',
+    errEmailInvalid: 'Adresse e-mail invalide',
+    errUsernameShort: 'Le nom d’utilisateur doit contenir au moins 3 caractères',
+    errUsernameLong: 'Le nom d’utilisateur est trop long',
+    errUsernameFormat: 'Nom d’utilisateur : lettres, chiffres, point, tiret ou underscore uniquement',
+    errPasswordShort: 'Le mot de passe doit contenir au moins 8 caractères',
+    errPasswordLong: 'Le mot de passe est trop long',
+    errTitleRequired: 'Le titre est obligatoire',
+    errTitleLong: 'Le titre est trop long',
   },
   en: {
     language: 'Language',
@@ -286,24 +373,150 @@ const messages = {
     adminYou: 'You',
     adminEmpty: 'No users.',
     adminRecent: 'Recent sign-ups',
+    btnSave: 'Save',
+    btnAdd: 'Add',
+    btnRemove: 'Remove',
+    btnEdit: 'Edit',
+    infoProfileSaved: 'Profile saved',
+    infoSaveFailed: 'Could not save',
+    infoAddFailed: 'Could not add this item',
+    infoPhotoSaved: 'Photo saved',
+    infoPhotoFailed: 'Upload failed (JPG, PNG or WebP, 2 MB max)',
+    infoPhotoRemoved: 'Photo removed',
+    infoPhotoRemoveFailed: 'Could not remove the photo',
+    infoPhotoPortrait: 'Portrait photo',
+    infoPhotoHint: 'JPG, PNG or WebP · 2 MB max',
+    infoPhotoHidden: 'Hidden on the US / ATS template',
+    infoJobRequired: 'Job title and company are required',
+    infoDegreeRequired: 'Degree and school are required',
+    infoSkillHint: 'Tip: press Enter to confirm. Languages are managed in the Languages tab.',
+    labelSkill: 'Skill *',
+    labelCategory: 'Category',
+    skillCatTechnical: 'Technical',
+    skillCatTool: 'Tool',
+    skillCatSoft: 'Soft skill',
+    skillCatOther: 'Other',
+    infoSkillRequired: 'Enter a skill',
+    infoSkillDuplicate: 'This skill already exists in this category',
+    infoLanguageRequired: 'Enter a language',
+    infoTitleRequired: 'A title is required',
+    infoNoDescription: 'No description',
+    hintExperience: 'Add and edit roles one by one',
+    hintEducation: 'Degrees and academic background',
+    hintLanguages: 'Levels on the European framework (CEFR)',
+    hintSkills: 'Add skills by category, without a 1–5 score',
+    emptySkills: 'No skill yet.',
+    dialogExpEdit: 'Edit experience',
+    dialogExpNew: 'New experience',
+    dialogEduEdit: 'Edit education',
+    dialogEduNew: 'New education',
+    dialogLangEdit: 'Edit language',
+    dialogLangNew: 'Add a language',
+    emptyExperience: 'No experience yet.',
+    emptyEducation: 'No education yet.',
+    emptyLanguages: 'No language yet.',
+    emptyItems: 'Nothing here yet.',
+    errNetwork: 'Cannot reach the server. Try again in a moment.',
+    errRegister: 'Could not create the account',
+    errLogin: 'Could not sign in',
+    errDashLoad: 'Could not load the dashboard',
+    errDashCreate: 'Could not create the CV',
+    errDashDefault: 'Could not set this CV as default',
+    errDashDelete: 'Could not delete this CV',
+    errAdminLoad: 'Could not load administration',
+    errAdminRole: 'Could not change the role',
+    errAdminDelete: 'Could not delete this account',
+    errResumeLoad: 'Could not load the CV',
+    errInvalid: 'Invalid information',
+    errEmailTaken: 'Email or username already in use',
+    errInvalidCredentials: 'Invalid credentials',
+    errUserNotFound: 'User not found',
+    errResumeNotFound: 'CV not found',
+    errResumeForbidden: 'You cannot access this CV',
+    errResumeNone: 'No CV found',
+    errResumeLast: 'The last CV cannot be deleted',
+    errResumeIdRequired: 'A CV id is required',
+    errEducationNotFound: 'Education entry not found',
+    errExperienceNotFound: 'Experience not found',
+    errExtraNotFound: 'Entry not found',
+    errSkillNotFound: 'Skill not found',
+    errPersonalNotFound: 'Personal details not found',
+    errFileMissing: 'No file was sent',
+    errFileRequired: 'A file is required',
+    errFileTooLarge: 'File is too large (8 MB max)',
+    errPhotoFormat: 'Accepted formats: JPG, PNG or WebP',
+    errPhotoTooLarge: 'Image is too large (2 MB max)',
+    errDocUnsupported: '.doc is not supported. Save the file as PDF or DOCX.',
+    errFormatUnsupported: 'Unsupported format. Use a PDF, DOCX or TXT file.',
+    errAdminSelfDemote: 'You cannot remove your own administrator role',
+    errAdminSelfDelete: 'You cannot delete your own account from administration',
+    errAdminLast: 'The last administrator cannot be removed',
+    errEmailInvalid: 'Invalid email address',
+    errUsernameShort: 'Username must be at least 3 characters',
+    errUsernameLong: 'Username is too long',
+    errUsernameFormat: 'Username: letters, digits, dot, hyphen or underscore only',
+    errPasswordShort: 'Password must be at least 8 characters',
+    errPasswordLong: 'Password is too long',
+    errTitleRequired: 'A title is required',
+    errTitleLong: 'Title is too long',
   },
 } as const
 
 export type UiMessageKey = keyof typeof messages.fr
 
+const ERROR_CODES: Record<string, UiMessageKey> = {
+  EMAIL_TAKEN: 'errEmailTaken',
+  INVALID_CREDENTIALS: 'errInvalidCredentials',
+  USER_NOT_FOUND: 'errUserNotFound',
+  RESUME_NOT_FOUND: 'errResumeNotFound',
+  RESUME_FORBIDDEN: 'errResumeForbidden',
+  RESUME_NONE: 'errResumeNone',
+  RESUME_LAST: 'errResumeLast',
+  RESUME_ID_REQUIRED: 'errResumeIdRequired',
+  EDUCATION_NOT_FOUND: 'errEducationNotFound',
+  EXPERIENCE_NOT_FOUND: 'errExperienceNotFound',
+  EXTRA_NOT_FOUND: 'errExtraNotFound',
+  SKILL_NOT_FOUND: 'errSkillNotFound',
+  PERSONAL_NOT_FOUND: 'errPersonalNotFound',
+  FILE_MISSING: 'errFileMissing',
+  FILE_REQUIRED: 'errFileRequired',
+  FILE_TOO_LARGE: 'errFileTooLarge',
+  PHOTO_FORMAT: 'errPhotoFormat',
+  PHOTO_TOO_LARGE: 'errPhotoTooLarge',
+  DOC_UNSUPPORTED: 'errDocUnsupported',
+  FORMAT_UNSUPPORTED: 'errFormatUnsupported',
+  ADMIN_SELF_DEMOTE: 'errAdminSelfDemote',
+  ADMIN_SELF_DELETE: 'errAdminSelfDelete',
+  ADMIN_LAST: 'errAdminLast',
+  'email.isEmail': 'errEmailInvalid',
+  'username.minLength': 'errUsernameShort',
+  'username.maxLength': 'errUsernameLong',
+  'username.matches': 'errUsernameFormat',
+  'password.minLength': 'errPasswordShort',
+  'password.maxLength': 'errPasswordLong',
+  'title.minLength': 'errTitleRequired',
+  'title.maxLength': 'errTitleLong',
+}
+
 export function useUiI18n() {
   const { resume } = useResume()
-  const uiLocale = useState<CvLocale>('ui-locale', () => 'fr')
+  const storedLocale = useCookie<CvLocale>('cv_ui_locale', {
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 365,
+  })
+  const uiLocale = useState<CvLocale>('ui-locale', () => resolveLocale(storedLocale.value || 'fr'))
 
   const locale = computed<CvLocale>(() => {
     if (resume.value?.locale) return resolveLocale(resume.value.locale)
-    return uiLocale.value
+    return resolveLocale(uiLocale.value || 'fr')
   })
 
   const dict = computed(() => messages[locale.value])
 
   function setUiLocale(next: CvLocale) {
-    uiLocale.value = next
+    const value = resolveLocale(next)
+    uiLocale.value = value
+    storedLocale.value = value
   }
 
   function t(key: UiMessageKey, vars?: Record<string, string | number>) {
@@ -316,7 +529,14 @@ export function useUiI18n() {
     return text
   }
 
-  return { locale, uiLocale, setUiLocale, t }
+  function te(error: unknown, fallback: UiMessageKey) {
+    return apiErrorMessage(error, t(fallback), t('errNetwork'), (code) => {
+      const key = ERROR_CODES[code]
+      return key ? t(key) : null
+    })
+  }
+
+  return { locale, uiLocale, setUiLocale, t, te }
 }
 
 export const FAMILY_KEYS: {

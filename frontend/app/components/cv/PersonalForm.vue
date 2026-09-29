@@ -1,8 +1,8 @@
 <template>
   <v-card border class="pa-4 md:pa-6">
     <div class="d-flex align-center justify-space-between mb-4">
-      <h2 class="font-display text-xl">Informations personnelles</h2>
-      <v-btn color="primary" :loading="saving" @click="save">Enregistrer</v-btn>
+      <h2 class="font-display text-xl">{{ t('tabProfile') }}</h2>
+      <v-btn color="primary" :loading="saving" @click="save">{{ t('btnSave') }}</v-btn>
     </div>
 
     <v-alert v-if="message" :type="messageType" variant="tonal" class="mb-4" density="comfortable">
@@ -13,7 +13,7 @@
       <div class="photo-box">
         <div class="photo-frame" :class="{ 'photo-frame--empty': !photoPreview }">
           <img v-if="photoPreview" :src="photoPreview" alt="Photo CV" class="photo-img" />
-          <span v-else class="text-xs text-muted text-center px-2">Photo portrait<br />35×45</span>
+          <span v-else class="text-xs text-muted text-center px-2">{{ t('infoPhotoPortrait') }}<br />35×45</span>
         </div>
         <div class="d-flex flex-column gap-2 mt-3" style="min-width: 140px">
           <v-btn
@@ -24,7 +24,7 @@
             :loading="uploading"
             @click="fileInput?.click()"
           >
-            Ajouter
+            {{ t('btnAdd') }}
           </v-btn>
           <v-btn
             v-if="resume?.personal?.photoUrl"
@@ -34,11 +34,11 @@
             :loading="uploading"
             @click="onRemovePhoto"
           >
-            Retirer
+            {{ t('btnRemove') }}
           </v-btn>
-          <p class="text-[11px] text-muted">JPG / PNG / WebP · max 2 Mo</p>
+          <p class="text-[11px] text-muted">{{ t('infoPhotoHint') }}</p>
           <p v-if="!showsPhoto" class="text-[11px] text-accent">
-            Masquée sur le modèle US / ATS
+            {{ t('infoPhotoHidden') }}
           </p>
         </div>
         <input
@@ -93,6 +93,7 @@
 <script setup lang="ts">
 import { getTemplateMeta } from '~/utils/cv-templates'
 
+const { t } = useUiI18n()
 const { resume, savePersonal, uploadPhoto, removePhoto, saving } = useResume()
 const { mediaUrl } = useMediaUrl()
 
@@ -108,8 +109,9 @@ const form = reactive({
   objective: '',
 })
 
-const message = ref('')
+const messageKey = ref<'infoProfileSaved' | 'infoSaveFailed' | 'infoPhotoSaved' | 'infoPhotoFailed' | 'infoPhotoRemoved' | 'infoPhotoRemoveFailed' | ''>('')
 const messageType = ref<'success' | 'error'>('success')
+const message = computed(() => (messageKey.value ? t(messageKey.value) : ''))
 const uploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
@@ -134,14 +136,14 @@ watch(
 )
 
 async function save() {
-  message.value = ''
+  messageKey.value = ''
   try {
     await savePersonal({ ...form })
     messageType.value = 'success'
-    message.value = 'Profil enregistré'
+    messageKey.value = 'infoProfileSaved'
   } catch {
     messageType.value = 'error'
-    message.value = 'Échec de l’enregistrement'
+    messageKey.value = 'infoSaveFailed'
   }
 }
 
@@ -151,14 +153,14 @@ async function onFile(event: Event) {
   input.value = ''
   if (!file) return
   uploading.value = true
-  message.value = ''
+  messageKey.value = ''
   try {
     await uploadPhoto(file)
     messageType.value = 'success'
-    message.value = 'Photo enregistrée'
+    messageKey.value = 'infoPhotoSaved'
   } catch {
     messageType.value = 'error'
-    message.value = 'Échec de l’upload (JPG/PNG/WebP, max 2 Mo)'
+    messageKey.value = 'infoPhotoFailed'
   } finally {
     uploading.value = false
   }
@@ -169,10 +171,10 @@ async function onRemovePhoto() {
   try {
     await removePhoto()
     messageType.value = 'success'
-    message.value = 'Photo retirée'
+    messageKey.value = 'infoPhotoRemoved'
   } catch {
     messageType.value = 'error'
-    message.value = 'Impossible de retirer la photo'
+    messageKey.value = 'infoPhotoRemoveFailed'
   } finally {
     uploading.value = false
   }

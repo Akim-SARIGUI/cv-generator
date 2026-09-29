@@ -19,7 +19,9 @@
     </div>
 
     <v-progress-linear v-if="loading || localizing" indeterminate color="primary" class="mb-4" />
-    <v-alert v-else-if="error" type="error" variant="tonal">{{ error }}</v-alert>
+    <v-alert v-else-if="error" type="error" variant="tonal">
+      {{ error === 'RESUME_LOAD' ? t('errResumeLoad') : error }}
+    </v-alert>
     <CvResumePreview v-else :resume="localizedResume || resume" />
 
     <CvDownloadDialog

@@ -17,7 +17,9 @@
       </div>
     </div>
 
-    <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+    <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
+      {{ error === 'RESUME_LOAD' ? t('errResumeLoad') : error }}
+    </v-alert>
     <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4" />
 
     <template v-else>

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEducationDto, UpdateEducationDto } from './dto/education.dto';
@@ -73,9 +74,9 @@ export class EducationService {
       where: { id: resumeId },
       select: { userId: true },
     });
-    if (!resume) throw new NotFoundException('CV introuvable');
+    if (!resume) throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     if (resume.userId !== userId) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
   }
 
@@ -84,6 +85,6 @@ export class EducationService {
     const item = await this.prisma.education.findFirst({
       where: { id, resumeId },
     });
-    if (!item) throw new NotFoundException('Formation introuvable');
+    if (!item) throw coded(NotFoundException, 'EDUCATION_NOT_FOUND');
   }
 }

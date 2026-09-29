@@ -5,14 +5,14 @@
         <h2 class="font-display text-xl">{{ title }}</h2>
         <p class="text-sm text-muted">{{ hint }}</p>
       </div>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">Ajouter</v-btn>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">{{ t('btnAdd') }}</v-btn>
     </div>
 
     <v-alert v-if="errorMsg" type="error" variant="tonal" class="mb-3" density="compact">
       {{ errorMsg }}
     </v-alert>
 
-    <div v-if="!items.length" class="text-muted text-sm mb-2">Aucun élément pour le moment.</div>
+    <div v-if="!items.length" class="text-muted text-sm mb-2">{{ t('emptyItems') }}</div>
 
     <v-list lines="two" class="bg-transparent">
       <v-list-item
@@ -42,7 +42,7 @@
     <v-dialog v-model="dialog" max-width="640" persistent>
       <v-card class="pa-4">
         <v-card-title class="font-display">
-          {{ editingId ? 'Modifier' : 'Ajouter' }}
+          {{ editingId ? t('btnEdit') : t('btnAdd') }}
         </v-card-title>
         <v-card-text>
           <v-text-field v-model="form.title" :label="titleLabel" class="mb-2" />
@@ -74,8 +74,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dialog = false">Annuler</v-btn>
-          <v-btn color="primary" :loading="busy" @click="save">Enregistrer</v-btn>
+          <v-btn variant="text" @click="dialog = false">{{ t('cancel') }}</v-btn>
+          <v-btn color="primary" :loading="busy" @click="save">{{ t('btnSave') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -91,6 +91,7 @@ const props = defineProps<{
   sectionKey: SectionKey
 }>()
 
+const { t, te, locale } = useUiI18n()
 const { resume, addExtra, updateExtra, removeExtra } = useResume()
 
 const dialog = ref(false)
@@ -108,8 +109,14 @@ const form = reactive({
 const items = computed(
   () => (resume.value?.extras || []).filter((e) => e.kind === props.kind),
 )
-const title = computed(() => SECTION_META[props.sectionKey].fr)
-const hint = computed(() => SECTION_META[props.sectionKey].hintFr)
+const title = computed(() =>
+  locale.value === 'en' ? SECTION_META[props.sectionKey].en : SECTION_META[props.sectionKey].fr,
+)
+const hint = computed(() =>
+  locale.value === 'en'
+    ? SECTION_META[props.sectionKey].hintEn
+    : SECTION_META[props.sectionKey].hintFr,
+)
 const titleLabel = computed(() =>
   props.kind === 'REFERENCE'
     ? 'Nom *'
@@ -150,7 +157,7 @@ function openEdit(item: ExtraEntry) {
 async function save() {
   errorMsg.value = ''
   if (!form.title.trim()) {
-    errorMsg.value = 'Le titre est obligatoire'
+    errorMsg.value = t('infoTitleRequired')
     return
   }
   busy.value = true
@@ -170,10 +177,7 @@ async function save() {
     }
     dialog.value = false
   } catch (e: unknown) {
-    const msg =
-      (e as { data?: { message?: string | string[] } })?.data?.message ||
-      'Échec de l’enregistrement'
-    errorMsg.value = Array.isArray(msg) ? msg.join(', ') : String(msg)
+    errorMsg.value = te(e, 'infoSaveFailed')
   } finally {
     busy.value = false
   }

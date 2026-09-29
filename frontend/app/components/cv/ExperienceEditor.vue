@@ -2,10 +2,10 @@
   <v-card border class="pa-4 md:pa-6">
     <div class="d-flex align-center justify-space-between mb-4">
       <div>
-        <h2 class="font-display text-xl">Expériences</h2>
-        <p class="text-sm text-muted">Ajoutez et modifiez vos postes un par un</p>
+        <h2 class="font-display text-xl">{{ t('tabExperience') }}</h2>
+        <p class="text-sm text-muted">{{ t('hintExperience') }}</p>
       </div>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">Ajouter</v-btn>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">{{ t('btnAdd') }}</v-btn>
     </div>
 
     <v-alert v-if="errorMsg" type="error" variant="tonal" class="mb-3" density="compact">
@@ -13,7 +13,7 @@
     </v-alert>
 
     <div v-if="!(resume?.experiences?.length)" class="text-muted text-sm mb-2">
-      Aucune expérience pour le moment.
+      {{ t('emptyExperience') }}
     </div>
 
     <v-list lines="three" class="bg-transparent">
@@ -27,7 +27,7 @@
         </template>
         <template #subtitle>
           <div>{{ item.company }}<span v-if="item.location"> · {{ item.location }}</span></div>
-          <div class="text-xs mt-1">{{ item.description || 'Sans description' }}</div>
+          <div class="text-xs mt-1">{{ item.description || t('infoNoDescription') }}</div>
         </template>
         <template #append>
           <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(item)" />
@@ -46,15 +46,15 @@
     <v-dialog v-model="dialog" max-width="680" persistent>
       <v-card class="pa-4">
         <v-card-title class="font-display">
-          {{ editingId ? 'Modifier l’expérience' : 'Nouvelle expérience' }}
+          {{ editingId ? t('dialogExpEdit') : t('dialogExpNew') }}
         </v-card-title>
         <v-card-text>
           <CvExperienceFields v-model="form" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dialog = false">Annuler</v-btn>
-          <v-btn color="primary" :loading="busy" @click="save">Enregistrer</v-btn>
+          <v-btn variant="text" @click="dialog = false">{{ t('cancel') }}</v-btn>
+          <v-btn color="primary" :loading="busy" @click="save">{{ t('btnSave') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -65,6 +65,7 @@
 import type { Experience } from '~/types/cv'
 import { toApiDate, toInputDate } from '~/utils/dates'
 
+const { t, te } = useUiI18n()
 const { resume, addExperience, updateExperience, removeExperience } = useResume()
 
 const dialog = ref(false)
@@ -124,7 +125,7 @@ async function save() {
   errorMsg.value = ''
   const body = payload()
   if (!body.jobTitle || !body.company) {
-    errorMsg.value = 'Poste et entreprise sont obligatoires'
+    errorMsg.value = t('infoJobRequired')
     return
   }
   busy.value = true
@@ -136,10 +137,7 @@ async function save() {
     }
     dialog.value = false
   } catch (e: unknown) {
-    const msg =
-      (e as { data?: { message?: string | string[] } })?.data?.message ||
-      'Échec de l’enregistrement'
-    errorMsg.value = Array.isArray(msg) ? msg.join(', ') : String(msg)
+    errorMsg.value = te(e, 'infoSaveFailed')
   } finally {
     busy.value = false
   }

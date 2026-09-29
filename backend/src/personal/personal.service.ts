@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
@@ -32,7 +33,7 @@ export class PersonalService {
     const personal = await this.prisma.personalInfo.findUnique({
       where: { resumeId },
     });
-    if (!personal) throw new NotFoundException('Infos personnelles introuvables');
+    if (!personal) throw coded(NotFoundException, 'PERSONAL_NOT_FOUND');
     return personal;
   }
 
@@ -44,13 +45,13 @@ export class PersonalService {
     await this.assertOwner(userId, resumeId);
 
     if (!file) {
-      throw new BadRequestException('Aucun fichier envoyé');
+      throw coded(BadRequestException, 'FILE_MISSING');
     }
     if (!ALLOWED_MIME.has(file.mimetype)) {
-      throw new BadRequestException('Formats acceptés : JPG, PNG, WebP');
+      throw coded(BadRequestException, 'PHOTO_FORMAT');
     }
     if (file.size > MAX_BYTES) {
-      throw new BadRequestException('Image trop lourde (max 2 Mo)');
+      throw coded(BadRequestException, 'PHOTO_TOO_LARGE');
     }
 
     const ext =
@@ -100,7 +101,7 @@ export class PersonalService {
     const personal = await this.prisma.personalInfo.findUnique({
       where: { resumeId },
     });
-    if (!personal) throw new NotFoundException('Infos personnelles introuvables');
+    if (!personal) throw coded(NotFoundException, 'PERSONAL_NOT_FOUND');
 
     if (personal.photoUrl?.startsWith('/uploads/')) {
       const absolute = resolveUploadAbsolute(personal.photoUrl);
@@ -124,9 +125,9 @@ export class PersonalService {
       where: { id: resumeId },
       select: { userId: true },
     });
-    if (!resume) throw new NotFoundException('CV introuvable');
+    if (!resume) throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     if (resume.userId !== userId) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
   }
 }

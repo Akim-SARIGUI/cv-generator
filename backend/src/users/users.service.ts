@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { coded } from '../common/coded-exception';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +20,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Utilisateur introuvable');
+      throw coded(NotFoundException, 'USER_NOT_FOUND');
     }
 
     return user;

@@ -2,17 +2,17 @@
   <v-card border class="pa-4 md:pa-6">
     <div class="d-flex align-center justify-space-between mb-4">
       <div>
-        <h2 class="font-display text-xl">Langues</h2>
-        <p class="text-sm text-muted">Niveaux selon le cadre européen (CECR)</p>
+        <h2 class="font-display text-xl">{{ t('tabLanguages') }}</h2>
+        <p class="text-sm text-muted">{{ t('hintLanguages') }}</p>
       </div>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">Ajouter</v-btn>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">{{ t('btnAdd') }}</v-btn>
     </div>
 
     <v-alert v-if="errorMsg" type="error" variant="tonal" class="mb-3" density="compact">
       {{ errorMsg }}
     </v-alert>
 
-    <div v-if="!items.length" class="text-muted text-sm mb-2">Aucune langue pour le moment.</div>
+    <div v-if="!items.length" class="text-muted text-sm mb-2">{{ t('emptyLanguages') }}</div>
 
     <v-list lines="two" class="bg-transparent">
       <v-list-item
@@ -36,7 +36,7 @@
     <v-dialog v-model="dialog" max-width="520" persistent>
       <v-card class="pa-4">
         <v-card-title class="font-display">
-          {{ editingId ? 'Modifier la langue' : 'Ajouter une langue' }}
+          {{ editingId ? t('dialogLangEdit') : t('dialogLangNew') }}
         </v-card-title>
         <v-card-text>
           <v-text-field
@@ -55,8 +55,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dialog = false">Annuler</v-btn>
-          <v-btn color="primary" :loading="busy" @click="save">Enregistrer</v-btn>
+          <v-btn variant="text" @click="dialog = false">{{ t('cancel') }}</v-btn>
+          <v-btn color="primary" :loading="busy" @click="save">{{ t('btnSave') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -67,6 +67,7 @@
 import type { ExtraEntry } from '~/types/cv'
 import { LANGUAGE_LEVELS, languageLevelLabel } from '~/utils/sections'
 
+const { t, te, locale } = useUiI18n()
 const { resume, addExtra, updateExtra, removeExtra } = useResume()
 
 const dialog = ref(false)
@@ -112,16 +113,15 @@ function openEdit(item: ExtraEntry) {
 async function save() {
   errorMsg.value = ''
   if (!form.title.trim()) {
-    errorMsg.value = 'Indiquez une langue'
+    errorMsg.value = t('infoLanguageRequired')
     return
   }
-  const levelMeta = LANGUAGE_LEVELS.find((l) => l.value === form.level)
   busy.value = true
   try {
     const payload = {
       kind: 'LANGUAGE' as const,
       title: form.title.trim(),
-      subtitle: levelMeta?.fr || form.level,
+      subtitle: languageLevelLabel(form.level, locale.value) || form.level,
     }
     if (editingId.value) {
       await updateExtra(editingId.value, payload)
@@ -130,10 +130,7 @@ async function save() {
     }
     dialog.value = false
   } catch (e: unknown) {
-    const msg =
-      (e as { data?: { message?: string | string[] } })?.data?.message ||
-      'Échec de l’enregistrement'
-    errorMsg.value = Array.isArray(msg) ? msg.join(', ') : String(msg)
+    errorMsg.value = te(e, 'infoSaveFailed')
   } finally {
     busy.value = false
   }

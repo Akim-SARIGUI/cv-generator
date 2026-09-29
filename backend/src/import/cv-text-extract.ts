@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import * as mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
+import { coded } from '../common/coded-exception';
 
 export type ExtractedSource = {
   text: string;
@@ -14,10 +15,10 @@ export async function extractTextFromUpload(
   file: Express.Multer.File,
 ): Promise<ExtractedSource> {
   if (!file?.buffer?.length) {
-    throw new BadRequestException('Fichier manquant');
+    throw coded(BadRequestException, 'FILE_MISSING');
   }
   if (file.size > MAX_BYTES) {
-    throw new BadRequestException('Fichier trop volumineux (max 8 Mo)');
+    throw coded(BadRequestException, 'FILE_TOO_LARGE');
   }
 
   const name = file.originalname || 'cv';
@@ -45,9 +46,7 @@ export async function extractTextFromUpload(
     lower.endsWith('.doc')
   ) {
     if (lower.endsWith('.doc') && !lower.endsWith('.docx')) {
-      throw new BadRequestException(
-        'Format .doc non supporté. Enregistrez en PDF ou DOCX.',
-      );
+      throw coded(BadRequestException, 'DOC_UNSUPPORTED');
     }
     const result = await mammoth.extractRawText({ buffer: file.buffer });
     return {
@@ -65,7 +64,5 @@ export async function extractTextFromUpload(
     };
   }
 
-  throw new BadRequestException(
-    'Format non supporté. Utilisez un PDF, DOCX ou TXT.',
-  );
+  throw coded(BadRequestException, 'FORMAT_UNSUPPORTED');
 }

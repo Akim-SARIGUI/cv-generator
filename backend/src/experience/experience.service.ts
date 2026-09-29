@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { coded } from '../common/coded-exception';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateExperienceDto, UpdateExperienceDto } from './dto/experience.dto';
@@ -71,9 +72,9 @@ export class ExperienceService {
       where: { id: resumeId },
       select: { userId: true },
     });
-    if (!resume) throw new NotFoundException('CV introuvable');
+    if (!resume) throw coded(NotFoundException, 'RESUME_NOT_FOUND');
     if (resume.userId !== userId) {
-      throw new ForbiddenException('Accès non autorisé à ce CV');
+      throw coded(ForbiddenException, 'RESUME_FORBIDDEN');
     }
   }
 
@@ -82,6 +83,6 @@ export class ExperienceService {
     const item = await this.prisma.experience.findFirst({
       where: { id, resumeId },
     });
-    if (!item) throw new NotFoundException('Expérience introuvable');
+    if (!item) throw coded(NotFoundException, 'EXPERIENCE_NOT_FOUND');
   }
 }
