@@ -7,7 +7,12 @@ import type {
   Resume,
   Skill,
 } from '~/types/cv'
-import { normalizeSections, type SectionKey } from '~/utils/sections'
+import {
+  normalizeSections,
+  packSections,
+  sectionOrder,
+  type SectionKey,
+} from '~/utils/sections'
 
 export function useResume() {
   const { api } = useApi()
@@ -106,7 +111,9 @@ export function useResume() {
   }
 
   async function updateResume(
-    payload: Partial<Pick<Resume, 'title' | 'template' | 'locale' | 'isDefault' | 'sections'>>,
+    payload: Partial<Pick<Resume, 'title' | 'template' | 'locale' | 'isDefault'>> & {
+      sections?: ReturnType<typeof packSections>
+    },
   ) {
     if (!resume.value) return
     saving.value = true
@@ -176,7 +183,41 @@ export function useResume() {
     if (!resume.value) return
     const sections = normalizeSections(resume.value.sections)
     if (sections[key]) return
-    await updateResume({ sections: { ...sections, [key]: true } })
+    await updateResume({
+      sections: packSections(
+        { ...sections, [key]: true },
+        sectionOrder(resume.value.sections),
+      ),
+    })
+  }
+
+  async function reorderEntries(
+    kind: 'experiences' | 'educations' | 'skills' | 'extras',
+    orderedIds: string[],
+  ) {
+    if (!resume.value) return
+    const current = resume.value[kind] || []
+    const byId = new Map(current.map((item) => [item.id, item]))
+    const next = orderedIds
+      .map((id) => byId.get(id))
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+      .map((item, index) => ({ ...item, sortOrder: index }))
+    for (const item of current) {
+      if (!next.some((row) => row.id === item.id)) {
+        next.push({ ...item, sortOrder: next.length })
+      }
+    }
+    resume.value = { ...resume.value, [kind]: next }
+    publishPreview()
+    await Promise.all(
+      next.map((item) =>
+        api(`/resumes/${resume.value!.id}/${kind}/${item.id}`, {
+          method: 'PATCH',
+          body: { sortOrder: item.sortOrder },
+        }),
+      ),
+    )
+    void refreshLocalized()
   }
 
   async function addExperience(payload: Partial<Experience>) {
@@ -440,6 +481,7 @@ export function useResume() {
     addExtra,
     updateExtra,
     removeExtra,
+    reorderEntries,
     downloadPdf,
     parseImportedCv,
     applyImportedCv,

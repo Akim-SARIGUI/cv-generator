@@ -15,14 +15,6 @@
         </div>
         <img v-if="photoSrc" :src="photoSrc" alt="Photo" class="photo-eu" />
       </header>
-      <section v-if="showProfile && personal?.summary" class="mb-6">
-        <h2 class="section-title" :style="{ color: accent }">{{ labels.profile }}</h2>
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-      </section>
-      <section v-if="showObjective && personal?.objective" class="mb-6">
-        <h2 class="section-title" :style="{ color: accent }">{{ labels.objective }}</h2>
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.objective }}</p>
-      </section>
       <CvPreviewSections :resume="resume" :labels="labels" :accent="accent" :locale="locale" />
     </div>
 
@@ -34,14 +26,6 @@
         </h1>
         <p class="text-sm text-muted">{{ contactLineAts }}</p>
       </header>
-      <section v-if="showProfile && personal?.summary" class="mb-6">
-        <h2 class="section-title-us">{{ labels.profile }}</h2>
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-      </section>
-      <section v-if="showObjective && personal?.objective" class="mb-6">
-        <h2 class="section-title-us">{{ labels.objective }}</h2>
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.objective }}</p>
-      </section>
       <CvPreviewSections
         :resume="resume"
         :labels="labels"
@@ -71,10 +55,6 @@
         <h1 class="font-display text-3xl mb-4" :style="{ color: accent }">
           {{ personal?.fullName || placeholderName }}
         </h1>
-        <section v-if="personal?.summary" class="mb-6">
-          <h2 class="section-title" :style="{ color: accent }">{{ labels.profile }}</h2>
-          <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-        </section>
         <CvPreviewSections
           :resume="resume"
           :labels="labels"
@@ -95,10 +75,6 @@
         </div>
       </div>
       <div class="p-8 md:p-10">
-        <section v-if="personal?.summary" class="mb-6">
-          <h2 class="section-title" :style="{ color: accent }">{{ labels.profile }}</h2>
-          <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-        </section>
         <CvPreviewSections :resume="resume" :labels="labels" :accent="accent" :locale="locale" />
       </div>
     </div>
@@ -115,10 +91,6 @@
         </div>
         <img v-if="photoSrc" :src="photoSrc" alt="Photo" class="photo-eu" />
       </header>
-      <section v-if="personal?.summary" class="mb-6 mt-6">
-        <h2 class="section-title" :style="{ color: accent }">{{ labels.profile }}</h2>
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-      </section>
       <CvPreviewSections :resume="resume" :labels="labels" :accent="accent" :locale="locale" />
     </div>
 
@@ -133,30 +105,12 @@
         </div>
         <img v-if="photoSrc" :src="photoSrc" alt="Photo" class="photo-eu" />
       </header>
-      <section v-if="personal?.summary" class="mb-6">
-        <h2 class="section-title" :style="{ color: accent }">{{ labels.profile }}</h2>
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-      </section>
-      <section v-if="experiences.length" class="mb-6">
-        <h2 class="section-title" :style="{ color: accent }">{{ labels.experience }}</h2>
-        <div v-for="item in experiences" :key="item.id" class="timeline-item mb-4">
-          <p class="text-sm leading-relaxed">
-            <span v-if="experienceYears(item)" class="font-semibold">{{ experienceYears(item) }} : </span>
-            <span class="font-semibold">{{ item.jobTitle }}</span>
-            <span v-if="item.company" class="italic"> — {{ item.company }}</span>
-          </p>
-          <ul v-if="item.description" class="cv-bullets">
-            <li v-for="(line, index) in item.description.split(/\n+/).filter(Boolean)" :key="index">
-              {{ line.replace(/^[-•]\s*/, '') }}
-            </li>
-          </ul>
-        </div>
-      </section>
       <CvPreviewSections
-        :resume="{ ...resume!, experiences: [] }"
+        :resume="resume"
         :labels="labels"
         :accent="accent"
         :locale="locale"
+        timeline
       />
     </div>
 
@@ -180,10 +134,6 @@
           </p>
         </aside>
         <div class="flex-grow-1" style="min-width: 240px">
-          <section v-if="personal?.summary" class="mb-6">
-            <h2 class="section-title" :style="{ color: accent }">{{ labels.profile }}</h2>
-            <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-          </section>
           <CvPreviewSections
             :resume="resume"
             :labels="labels"
@@ -202,10 +152,6 @@
       </h1>
       <img v-if="photoSrc" :src="photoSrc" alt="Photo" class="photo-eu mx-auto mb-4" />
       <p class="text-sm text-muted mb-6">{{ contactLine }}</p>
-      <section v-if="personal?.summary" class="mb-8 max-w-prose mx-auto text-left">
-        <h2 class="section-title text-center" :style="{ color: accent }">{{ labels.profile }}</h2>
-        <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
-      </section>
       <div class="text-left">
         <CvPreviewSections :resume="resume" :labels="labels" :accent="accent" :locale="locale" minimal />
       </div>
@@ -218,12 +164,6 @@
         {{ personal?.fullName || placeholderName }}
       </h1>
       <p class="text-sm text-muted mb-8 max-w-[85%]">{{ contactLine }}</p>
-      <p
-        v-if="personal?.summary"
-        class="text-sm leading-relaxed whitespace-pre-wrap mb-8 max-w-prose"
-      >
-        {{ personal.summary }}
-      </p>
       <CvPreviewSections
         :resume="resume"
         :labels="labels"
@@ -236,13 +176,12 @@
 </template>
 
 <script setup lang="ts">
-import type { Experience, Resume, SkillCategory } from '~/types/cv'
+import type { Resume, SkillCategory } from '~/types/cv'
 import {
   getLabels,
   getTemplateMeta,
   resolveLocale,
 } from '~/utils/cv-templates'
-import { normalizeSections } from '~/utils/sections'
 
 const props = defineProps<{ resume: Resume | null }>()
 const { mediaUrl } = useMediaUrl()
@@ -251,7 +190,6 @@ const personal = computed(() => props.resume?.personal)
 const skills = computed(() =>
   (props.resume?.skills || []).filter((s) => s.category !== 'LANGUAGE'),
 )
-const experiences = computed(() => props.resume?.experiences || [])
 const skillGroups = computed(() => {
   const names: Partial<Record<SkillCategory, string>> = {
     TECHNICAL: labels.value.technical,
@@ -268,9 +206,6 @@ const skillGroups = computed(() => {
   }
   return [...map.entries()].map(([label, items]) => ({ label, items }))
 })
-const sections = computed(() => normalizeSections(props.resume?.sections))
-const showProfile = computed(() => sections.value.profile)
-const showObjective = computed(() => sections.value.objective)
 const { templates, loadTemplates } = useTemplates()
 onMounted(() => {
   loadTemplates()
@@ -283,26 +218,6 @@ const labels = computed(() => getLabels(locale.value))
 const placeholderName = computed(() =>
   locale.value === 'en' ? 'Your name' : 'Votre nom',
 )
-function yearOf(value?: string | null) {
-  if (!value) return ''
-  const match = String(value).match(/^(\d{4})/)
-  if (match) return match[1]
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return String(date.getFullYear())
-}
-
-function experienceYears(item: Experience) {
-  const from = yearOf(item.startDate)
-  const to = item.currentJob
-    ? locale.value === 'en'
-      ? 'Present'
-      : 'Présent'
-    : yearOf(item.endDate)
-  if (from && to) return `${from} – ${to}`
-  return from || to
-}
-
 const photoSrc = computed(() => {
   if (!meta.value.showsPhoto) return ''
   return mediaUrl(personal.value?.photoUrl)
@@ -346,12 +261,14 @@ const contactList = computed(
 <style scoped>
 .section-title {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 1.05rem;
-  border-bottom: 1px solid var(--cv-line);
-  padding-bottom: 0.35rem;
-  margin-bottom: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 1.02rem;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+  border-bottom: 2px solid currentColor;
+  padding-bottom: 0.2rem;
+  margin: 0 0 0.8rem;
 }
 .section-title-us {
   font-size: 0.95rem;

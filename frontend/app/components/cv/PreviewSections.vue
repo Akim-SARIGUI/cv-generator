@@ -1,8 +1,24 @@
 <template>
   <div>
-    <section v-if="showExperience && experiences.length" class="mb-6">
+    <template v-for="key in visibleOrder" :key="key">
+    <section v-if="key === 'profile' && personal?.summary" class="mb-6">
+      <h2 :class="titleClass" :style="titleStyle">{{ labels.profile }}</h2>
+      <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.summary }}</p>
+    </section>
+
+    <section v-else-if="key === 'objective' && personal?.objective" class="mb-6">
+      <h2 :class="titleClass" :style="titleStyle">{{ labels.objective }}</h2>
+      <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ personal.objective }}</p>
+    </section>
+
+    <section v-else-if="key === 'experience' && experiences.length" class="mb-6">
       <h2 :class="titleClass" :style="titleStyle">{{ labels.experience }}</h2>
-      <div v-for="item in experiences" :key="item.id" class="mb-4">
+      <div
+        v-for="item in experiences"
+        :key="item.id"
+        class="mb-4"
+        :class="{ 'timeline-item': timeline }"
+      >
         <p class="text-sm leading-relaxed">
           <span v-if="experiencePeriod(item)" class="font-semibold">{{ experiencePeriod(item) }} : </span>
           <span class="font-semibold">{{ item.jobTitle }}</span>
@@ -15,7 +31,7 @@
       </div>
     </section>
 
-    <section v-if="showEducation && educations.length" class="mb-6">
+    <section v-else-if="key === 'education' && educations.length" class="mb-6">
       <h2 :class="titleClass" :style="titleStyle">{{ labels.education }}</h2>
       <div v-for="item in educations" :key="item.id" class="mb-3">
         <p class="text-sm leading-relaxed">
@@ -31,7 +47,7 @@
       </div>
     </section>
 
-    <section v-if="!hideSkills && showSkills && skills.length" class="mb-6">
+    <section v-else-if="key === 'skills' && skillGroups.length" class="mb-6">
       <h2 :class="titleClass" :style="titleStyle">{{ labels.skills }}</h2>
       <p v-for="group in skillGroups" :key="group.label" class="text-sm leading-relaxed mb-2">
         <span class="font-semibold">{{ group.label }} :</span>
@@ -40,28 +56,27 @@
     </section>
 
     <section
-      v-for="group in extraGroups"
-      :key="group.key"
-      class="mb-6 mt-6"
+      v-else-if="extraOf(key)"
+      class="mb-6"
     >
-      <h2 :class="titleClass" :style="titleStyle">{{ group.title }}</h2>
-      <div v-if="group.key === 'languages'" class="space-y-2">
-        <div v-for="item in group.items" :key="item.id" class="d-flex justify-space-between gap-2">
+      <h2 :class="titleClass" :style="titleStyle">{{ extraOf(key)?.title }}</h2>
+      <div v-if="extraOf(key).key === 'languages'" class="space-y-2">
+        <div v-for="item in extraOf(key).items" :key="item.id" class="d-flex justify-space-between gap-2">
           <p class="font-semibold text-sm">{{ item.title }}</p>
           <p class="text-sm text-muted">{{ item.subtitle }}</p>
         </div>
       </div>
-      <p v-else-if="group.key === 'interests'" class="text-sm">
-        {{ group.items.map((i) => i.title).join('  ·  ') }}
+      <p v-else-if="extraOf(key).key === 'interests'" class="text-sm">
+        {{ extraOf(key).items.map((i) => i.title).join('  ·  ') }}
       </p>
-      <div v-else-if="group.key === 'projects'">
-        <p v-for="item in group.items" :key="item.id" class="text-sm leading-relaxed mb-2">
+      <div v-else-if="extraOf(key).key === 'projects'">
+        <p v-for="item in extraOf(key).items" :key="item.id" class="text-sm leading-relaxed mb-2">
           <span class="font-semibold">{{ item.title }} :</span>
           {{ [item.subtitle, item.description].filter(Boolean).join(' — ') }}
         </p>
       </div>
       <div v-else>
-        <div v-for="item in group.items" :key="item.id" class="mb-3">
+        <div v-for="item in extraOf(key).items" :key="item.id" class="mb-3">
           <p class="text-sm leading-relaxed">
             <span v-if="item.dateLabel" class="font-semibold">{{ item.dateLabel }} : </span>
             <span class="font-semibold">{{ item.title }}</span>
@@ -73,13 +88,14 @@
         </div>
       </div>
     </section>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Resume, SkillCategory } from '~/types/cv'
 import type { CvLabels, CvLocale } from '~/utils/cv-templates'
-import { normalizeSections } from '~/utils/sections'
+import { normalizeSections, sectionOrder } from '~/utils/sections'
 
 const props = withDefaults(
   defineProps<{
@@ -90,18 +106,25 @@ const props = withDefaults(
     ats?: boolean
     minimal?: boolean
     hideSkills?: boolean
+    timeline?: boolean
   }>(),
   {
     ats: false,
     minimal: false,
     hideSkills: false,
+    timeline: false,
   },
 )
 
 const sections = computed(() => normalizeSections(props.resume?.sections))
-const showExperience = computed(() => sections.value.experience)
-const showEducation = computed(() => sections.value.education)
-const showSkills = computed(() => sections.value.skills)
+const personal = computed(() => props.resume?.personal)
+const visibleOrder = computed(() =>
+  sectionOrder(props.resume?.sections).filter((key) => {
+    if (!sections.value[key]) return false
+    if (props.hideSkills && key === 'skills') return false
+    return true
+  }),
+)
 
 const experiences = computed(() => props.resume?.experiences || [])
 const educations = computed(() => props.resume?.educations || [])
@@ -141,6 +164,15 @@ const skillGroups = computed(() => {
     items,
   }))
 })
+
+const extraByKey = computed(() => {
+  const map = new Map(extraGroups.value.map((group) => [group.key, group]))
+  return map
+})
+
+function extraOf(key: string) {
+  return extraByKey.value.get(key as 'languages')
+}
 
 const extraGroups = computed(() => {
   const defs = [
@@ -224,12 +256,19 @@ function detailLines(value?: string | null) {
 <style scoped>
 .section-title {
   font-family: 'Fraunces', Georgia, serif;
-  font-size: 1.05rem;
-  border-bottom: 1px solid var(--cv-line);
-  padding-bottom: 0.35rem;
-  margin-bottom: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 1.02rem;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+  border-bottom: 2px solid currentColor;
+  padding-bottom: 0.2rem;
+  margin: 0 0 0.8rem;
+}
+.timeline-item {
+  border-left: 2px solid var(--cv-line);
+  padding-left: 1rem;
+  margin-left: 0.25rem;
 }
 .section-title-us {
   font-size: 0.95rem;

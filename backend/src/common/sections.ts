@@ -30,16 +30,43 @@ export const DEFAULT_SECTIONS: SectionsConfig = {
   references: false,
 };
 
-export function normalizeSections(value: unknown): SectionsConfig {
+export function sectionOrder(value: unknown): SectionKey[] {
+  const raw =
+    value && typeof value === 'object'
+      ? (value as { order?: unknown }).order
+      : undefined;
+  const picked: SectionKey[] = [];
+  const seen = new Set<string>();
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (
+        typeof item === 'string' &&
+        (SECTION_KEYS as readonly string[]).includes(item) &&
+        !seen.has(item)
+      ) {
+        seen.add(item);
+        picked.push(item as SectionKey);
+      }
+    }
+  }
+  for (const key of SECTION_KEYS) {
+    if (!seen.has(key)) picked.push(key);
+  }
+  return picked;
+}
+
+export function normalizeSections(
+  value: unknown,
+): SectionsConfig & { order: SectionKey[] } {
   const base = { ...DEFAULT_SECTIONS };
-  if (!value || typeof value !== 'object') return base;
+  if (!value || typeof value !== 'object') return { ...base, order: sectionOrder(value) };
   const input = value as Record<string, unknown>;
   for (const key of SECTION_KEYS) {
     if (typeof input[key] === 'boolean') {
       base[key] = input[key] as boolean;
     }
   }
-  return base;
+  return { ...base, order: sectionOrder(value) };
 }
 
 export const SECTION_META: Record<

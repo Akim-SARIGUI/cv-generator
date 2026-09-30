@@ -16,10 +16,22 @@
 
     <v-list lines="two" class="bg-transparent">
       <v-list-item
-        v-for="item in items"
+        v-for="(item, index) in items"
         :key="item.id"
         class="border rounded-lg mb-2 px-3"
+        @dragover.prevent
+        @drop="drop(index)"
       >
+        <template #prepend>
+          <v-btn
+            icon="mdi-drag"
+            variant="text"
+            size="small"
+            draggable="true"
+            :aria-label="t('dragHint')"
+            @dragstart="start(index, $event)"
+          />
+        </template>
         <template #title>
           <span class="font-medium">{{ item.title }}</span>
         </template>
@@ -92,7 +104,26 @@ const props = defineProps<{
 }>()
 
 const { t, te, locale } = useUiI18n()
-const { resume, addExtra, updateExtra, removeExtra } = useResume()
+const { resume, addExtra, updateExtra, removeExtra, reorderEntries } = useResume()
+const dragFrom = ref<number | null>(null)
+
+function start(index: number, event: DragEvent) {
+  dragFrom.value = index
+  event.dataTransfer?.setData('text/plain', String(index))
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+async function drop(index: number) {
+  const from = dragFrom.value
+  dragFrom.value = null
+  if (from == null || from === index || !items.value[from]) return
+  const next = items.value.slice()
+  const [moved] = next.splice(from, 1)
+  if (!moved) return
+  next.splice(index, 0, moved)
+  const others = (resume.value?.extras || []).filter((entry) => entry.kind !== props.kind)
+  await reorderEntries('extras', [...others.map((entry) => entry.id), ...next.map((entry) => entry.id)])
+}
 
 const dialog = ref(false)
 const busy = ref(false)

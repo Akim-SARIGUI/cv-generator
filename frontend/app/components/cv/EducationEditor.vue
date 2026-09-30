@@ -18,10 +18,22 @@
 
     <v-list lines="three" class="bg-transparent">
       <v-list-item
-        v-for="item in resume?.educations || []"
+        v-for="(item, index) in resume?.educations || []"
         :key="item.id"
         class="border rounded-lg mb-2 px-3"
+        @dragover.prevent
+        @drop="drop(index)"
       >
+        <template #prepend>
+          <v-btn
+            icon="mdi-drag"
+            variant="text"
+            size="small"
+            draggable="true"
+            :aria-label="t('dragHint')"
+            @dragstart="start(index, $event)"
+          />
+        </template>
         <template #title>
           <span class="font-medium">{{ item.degree }}</span>
         </template>
@@ -66,7 +78,26 @@ import type { Education } from '~/types/cv'
 import { toApiDate, toInputDate } from '~/utils/dates'
 
 const { t, te } = useUiI18n()
-const { resume, addEducation, updateEducation, removeEducation } = useResume()
+const { resume, addEducation, updateEducation, removeEducation, reorderEntries } = useResume()
+const dragFrom = ref<number | null>(null)
+
+function start(index: number, event: DragEvent) {
+  dragFrom.value = index
+  event.dataTransfer?.setData('text/plain', String(index))
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+async function drop(index: number) {
+  const from = dragFrom.value
+  dragFrom.value = null
+  const items = resume.value?.educations || []
+  if (from == null || from === index || !items[from]) return
+  const next = items.slice()
+  const [moved] = next.splice(from, 1)
+  if (!moved) return
+  next.splice(index, 0, moved)
+  await reorderEntries('educations', next.map((item) => item.id))
+}
 
 const dialog = ref(false)
 const busy = ref(false)

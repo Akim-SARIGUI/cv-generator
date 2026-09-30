@@ -53,11 +53,15 @@
       </p>
       <div class="d-flex flex-wrap gap-2">
         <v-chip
-          v-for="skill in group.items"
+          v-for="(skill, index) in group.items"
           :key="skill.id"
           closable
           color="primary"
           variant="tonal"
+          draggable="true"
+          @dragstart="start(group.value, index, $event)"
+          @dragover.prevent
+          @drop="drop(group.value, index)"
           @click:close="removeItem(skill.id)"
         >
           {{ skill.name }}
@@ -71,7 +75,33 @@
 import type { Skill, SkillCategory } from '~/types/cv'
 
 const { t, te } = useUiI18n()
-const { resume, addSkill, removeSkill } = useResume()
+const { resume, addSkill, removeSkill, reorderEntries } = useResume()
+const dragFrom = ref<{ category: SkillCategory; index: number } | null>(null)
+
+function start(category: SkillCategory, index: number, event: DragEvent) {
+  dragFrom.value = { category, index }
+  event.dataTransfer?.setData('text/plain', `${category}:${index}`)
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+async function drop(category: SkillCategory, index: number) {
+  const from = dragFrom.value
+  dragFrom.value = null
+  if (!from || from.category !== category || from.index === index) return
+  const groups = grouped.value.map((group) => ({
+    ...group,
+    items: group.items.slice(),
+  }))
+  const group = groups.find((entry) => entry.value === category)
+  if (!group) return
+  const [moved] = group.items.splice(from.index, 1)
+  if (!moved) return
+  group.items.splice(index, 0, moved)
+  await reorderEntries(
+    'skills',
+    groups.flatMap((entry) => entry.items.map((skill) => skill.id)),
+  )
+}
 
 const busy = ref(false)
 const errorMsg = ref('')

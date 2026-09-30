@@ -170,7 +170,7 @@ export function sectionTitle(
     .font('Helvetica-Bold')
     .fontSize(11)
     .fillColor(color)
-    .text(title.toUpperCase(), x, undefined, width ? { width } : undefined);
+    .text(title, x, undefined, width ? { width } : undefined);
   const lineY = doc.y + 2;
   const left = x ?? doc.page.margins.left;
   const right = width

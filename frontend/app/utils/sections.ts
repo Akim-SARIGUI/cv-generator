@@ -47,22 +47,22 @@ export const SECTION_META: Record<
     hintEn: 'Career objective',
   },
   experience: {
-    fr: 'Expériences professionnelles',
-    en: 'Professional experience',
-    hintFr: 'Parcours professionnel',
-    hintEn: 'Work history',
+    fr: 'Expériences',
+    en: 'Experience',
+    hintFr: 'Années, poste, employeur, missions',
+    hintEn: 'Years, role, employer, duties',
   },
   education: {
-    fr: 'Diplômes et formation académique',
-    en: 'Degrees and academic background',
-    hintFr: 'Diplômes et études',
-    hintEn: 'Degrees and studies',
+    fr: 'Diplômes',
+    en: 'Degrees',
+    hintFr: 'Années, diplôme, établissement, mention',
+    hintEn: 'Years, degree, school, honours',
   },
   skills: {
-    fr: 'Compétences techniques',
-    en: 'Technical skills',
-    hintFr: 'Tags professionnels par catégorie',
-    hintEn: 'Professional tags by category',
+    fr: 'Compétences',
+    en: 'Skills',
+    hintFr: 'Une catégorie, puis la liste',
+    hintEn: 'One category, then the list',
   },
   languages: {
     fr: 'Langues',
@@ -71,10 +71,10 @@ export const SECTION_META: Record<
     hintEn: 'Languages with CEFR level',
   },
   certifications: {
-    fr: 'Certifications et formations complémentaires',
-    en: 'Certifications and additional training',
-    hintFr: 'Certificats et formations courtes',
-    hintEn: 'Certificates and short courses',
+    fr: 'Certifications',
+    en: 'Certificates',
+    hintFr: 'Date, intitulé, organisme',
+    hintEn: 'Date, title, issuer',
   },
   awards: {
     fr: 'Attestations / Distinctions',
@@ -83,10 +83,10 @@ export const SECTION_META: Record<
     hintEn: 'Awards and distinctions',
   },
   projects: {
-    fr: 'Projets clés',
-    en: 'Key projects',
-    hintFr: 'Réalisations et projets',
-    hintEn: 'Projects and achievements',
+    fr: 'Projets',
+    en: 'Projects',
+    hintFr: 'Nom du projet, puis le résultat',
+    hintEn: 'Project name, then the outcome',
   },
   interests: {
     fr: 'Centres d’intérêt',
@@ -110,6 +110,35 @@ export function normalizeSections(value: unknown): SectionsConfig {
     if (typeof input[key] === 'boolean') base[key] = input[key] as boolean
   }
   return base
+}
+
+export function sectionOrder(value: unknown): SectionKey[] {
+  const raw =
+    value && typeof value === 'object'
+      ? (value as { order?: unknown }).order
+      : undefined
+  const picked: SectionKey[] = []
+  const seen = new Set<string>()
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (
+        typeof item === 'string' &&
+        (SECTION_KEYS as readonly string[]).includes(item) &&
+        !seen.has(item)
+      ) {
+        seen.add(item)
+        picked.push(item as SectionKey)
+      }
+    }
+  }
+  for (const key of SECTION_KEYS) {
+    if (!seen.has(key)) picked.push(key)
+  }
+  return picked
+}
+
+export function packSections(flags: SectionsConfig, order: SectionKey[]) {
+  return { ...flags, order: sectionOrder({ order }) }
 }
 
 export type ExtraKind =

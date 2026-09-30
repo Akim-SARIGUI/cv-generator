@@ -14,7 +14,7 @@ import {
   getTemplateDef,
   type TemplateDefinition,
 } from '../common/cv-templates';
-import { normalizeSections } from '../common/sections';
+import { normalizeSections, sectionOrder } from '../common/sections';
 import {
   contactParts,
   drawFooter,
@@ -190,11 +190,7 @@ export class GenerateService {
     }
 
     this.drawHairline(doc, left, contentWidth, '#d0d7de');
-    this.writeProfileBlocks(doc, data, accent);
-    this.writeExperiences(doc, data, accent, muted);
-    this.writeEducations(doc, data, accent, muted);
-    this.writeSkills(doc, data, accent);
-    this.writeExtras(doc, data, accent, muted);
+    this.writeOrderedSections(doc, data, accent, muted);
   }
 
   private renderAts(
@@ -224,11 +220,7 @@ export class GenerateService {
         .text(parts.join(' | '), { align: 'center' });
       doc.moveDown(0.7);
     }
-    this.writeProfileBlocks(doc, data, ink, true);
-    this.writeExperiences(doc, data, ink, muted, true);
-    this.writeEducations(doc, data, ink, muted, true);
-    this.writeSkills(doc, data, ink, true);
-    this.writeExtras(doc, data, ink, muted, true);
+    this.writeOrderedSections(doc, data, ink, muted, true);
   }
 
   private renderSidebar(
@@ -544,7 +536,6 @@ export class GenerateService {
     data: ResumePdfData,
     theme: TemplateDefinition,
   ) {
-    const labels = labelsFor(data);
     const accent = theme.accent;
     const personal = data.personal;
     const photo = theme.showsPhoto
@@ -581,19 +572,7 @@ export class GenerateService {
     doc.y = bannerH + 28;
     doc.page.margins = { top: 48, bottom: 48, left: 48, right: 48 };
 
-    if (personal?.summary) {
-      sectionTitle(doc, labels.profile, accent);
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#222')
-        .text(personal.summary, { align: 'justify', lineGap: 2 });
-      doc.moveDown(0.7);
-    }
-    this.writeExperiences(doc, data, accent, '#5c6b7a');
-    this.writeEducations(doc, data, accent, '#5c6b7a');
-    this.writeSkills(doc, data, accent);
-    this.writeExtras(doc, data, accent, '#5c6b7a');
+    this.writeOrderedSections(doc, data, accent, '#5c6b7a');
   }
 
   private renderExecutive(
@@ -601,7 +580,6 @@ export class GenerateService {
     data: ResumePdfData,
     theme: TemplateDefinition,
   ) {
-    const labels = labelsFor(data);
     const accent = theme.accent;
     const personal = data.personal;
     const photo = theme.showsPhoto
@@ -636,19 +614,7 @@ export class GenerateService {
         .text(parts.join('   ·   '));
       doc.moveDown(0.8);
     }
-    if (personal?.summary) {
-      sectionTitle(doc, labels.profile, accent);
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#222')
-        .text(personal.summary, { align: 'justify', lineGap: 2 });
-      doc.moveDown(0.7);
-    }
-    this.writeExperiences(doc, data, accent, '#5c6b7a');
-    this.writeEducations(doc, data, accent, '#5c6b7a');
-    this.writeSkills(doc, data, accent);
-    this.writeExtras(doc, data, accent, '#5c6b7a');
+    this.writeOrderedSections(doc, data, accent, '#5c6b7a');
   }
 
   private renderTimeline(
@@ -1020,15 +986,38 @@ export class GenerateService {
     return normalizeSections(data.sections)[key as keyof ReturnType<typeof normalizeSections>];
   }
 
+  private writeOrderedSections(
+    doc: PDFKit.PDFDocument,
+    data: ResumePdfData,
+    accent: string,
+    muted: string,
+    ats = false,
+  ) {
+    for (const key of sectionOrder(data.sections)) {
+      if (key === 'profile' || key === 'objective') {
+        this.writeProfileBlocks(doc, data, accent, ats, key);
+      } else if (key === 'experience') {
+        this.writeExperiences(doc, data, accent, muted, ats);
+      } else if (key === 'education') {
+        this.writeEducations(doc, data, accent, muted, ats);
+      } else if (key === 'skills') {
+        this.writeSkills(doc, data, accent, ats);
+      } else {
+        this.writeExtras(doc, data, accent, muted, false, key);
+      }
+    }
+  }
+
   private writeProfileBlocks(
     doc: PDFKit.PDFDocument,
     data: ResumePdfData,
     accent: string,
     ats = false,
+    only?: 'profile' | 'objective',
   ) {
     const labels = labelsFor(data);
     const personal = data.personal;
-    if (this.sectionOn(data, 'profile') && personal?.summary) {
+    if ((!only || only === 'profile') && this.sectionOn(data, 'profile') && personal?.summary) {
       sectionTitle(doc, labels.profile, accent);
       doc
         .font('Helvetica')
@@ -1040,7 +1029,7 @@ export class GenerateService {
         });
       doc.moveDown(0.6);
     }
-    if (this.sectionOn(data, 'objective') && personal?.objective) {
+    if ((!only || only === 'objective') && this.sectionOn(data, 'objective') && personal?.objective) {
       sectionTitle(doc, labels.objective, accent);
       doc
         .font('Helvetica')
@@ -1057,6 +1046,7 @@ export class GenerateService {
     accent: string,
     muted: string,
     compact = false,
+    only?: string,
   ) {
     const labels = labelsFor(data);
     const extras = data.extras || [];
@@ -1084,6 +1074,7 @@ export class GenerateService {
     ];
 
     for (const group of groups) {
+      if (only && group.key !== only) continue;
       if (!this.sectionOn(data, group.key)) continue;
       const items = extras.filter((e) => e.kind === group.kind);
       if (!items.length) continue;

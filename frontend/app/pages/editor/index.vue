@@ -23,22 +23,25 @@
     <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4" />
 
     <template v-else>
-      <v-tabs v-model="tab" color="primary" class="mb-4 editor-tabs" show-arrows>
-        <v-tab value="import">{{ t('tabImport') }}</v-tab>
-        <v-tab value="structure">{{ t('tabStructure') }}</v-tab>
-        <v-tab value="model">{{ t('tabModel') }}</v-tab>
-        <v-tab value="profile">{{ t('tabProfile') }}</v-tab>
-        <v-tab v-if="sections.experience" value="experience">{{ t('tabExperience') }}</v-tab>
-        <v-tab v-if="sections.education" value="education">{{ t('tabEducation') }}</v-tab>
-        <v-tab v-if="sections.skills" value="skills">{{ t('tabSkills') }}</v-tab>
-        <v-tab v-if="sections.languages" value="languages">{{ t('tabLanguages') }}</v-tab>
-        <v-tab v-if="sections.certifications" value="certifications">{{ t('tabCertifications') }}</v-tab>
-        <v-tab v-if="sections.awards" value="awards">{{ t('tabAwards') }}</v-tab>
-        <v-tab v-if="sections.projects" value="projects">{{ t('tabProjects') }}</v-tab>
-        <v-tab v-if="sections.interests" value="interests">{{ t('tabInterests') }}</v-tab>
-        <v-tab v-if="sections.references" value="references">{{ t('tabReferences') }}</v-tab>
-      </v-tabs>
+      <div class="editor-layout">
+        <nav class="editor-nav" :aria-label="t('editorTitle')">
+          <button
+            v-for="(step, index) in steps"
+            :key="step.id"
+            type="button"
+            class="editor-step"
+            :class="{ 'editor-step--on': tab === step.id }"
+            @click="tab = step.id"
+          >
+            <span class="editor-step__index">{{ index + 1 }}</span>
+            <span>
+              <span class="editor-step__title">{{ step.title }}</span>
+              <span class="editor-step__hint">{{ step.hint }}</span>
+            </span>
+          </button>
+        </nav>
 
+        <div class="editor-panel">
       <v-tabs-window v-model="tab">
         <v-tabs-window-item value="import">
           <CvImportPanel @imported="onImported" />
@@ -80,6 +83,8 @@
           <CvExtrasEditor kind="REFERENCE" section-key="references" />
         </v-tabs-window-item>
       </v-tabs-window>
+        </div>
+      </div>
     </template>
 
     <CvDownloadDialog
@@ -91,10 +96,10 @@
 </template>
 
 <script setup lang="ts">
-import { normalizeSections } from '~/utils/sections'
+import { SECTION_META, normalizeSections, sectionOrder, type SectionKey } from '~/utils/sections'
 import type { CvLocale } from '~/utils/cv-templates'
 
-const { t } = useUiI18n()
+const { t, locale } = useUiI18n()
 const route = useRoute()
 const { resume, loading, error, loadDefault, loadById, downloadPdf } = useResume()
 const downloading = ref(false)
@@ -102,6 +107,24 @@ const downloadOpen = ref(false)
 const tab = ref('import')
 
 const sections = computed(() => normalizeSections(resume.value?.sections))
+
+const steps = computed(() => {
+  const content = sectionOrder(resume.value?.sections).filter((key) => {
+    if (key === 'profile' || key === 'objective') return false
+    return sections.value[key]
+  })
+  const label = (key: SectionKey) =>
+    locale.value === 'en' ? SECTION_META[key].en : SECTION_META[key].fr
+  const hint = (key: SectionKey) =>
+    locale.value === 'en' ? SECTION_META[key].hintEn : SECTION_META[key].hintFr
+  return [
+    { id: 'import', title: t('tabImport'), hint: t('stepImportHint') },
+    { id: 'structure', title: t('tabStructure'), hint: t('stepStructureHint') },
+    { id: 'profile', title: t('tabProfile'), hint: t('stepProfileHint') },
+    ...content.map((key) => ({ id: key, title: label(key), hint: hint(key) })),
+    { id: 'model', title: t('tabModel'), hint: t('stepModelHint') },
+  ]
+})
 
 watch(sections, (s) => {
   if (
@@ -142,7 +165,70 @@ async function onDownload(locale: CvLocale) {
 </script>
 
 <style scoped>
-.editor-tabs {
-  border-bottom: 1px solid var(--cv-line);
+.editor-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.editor-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: sticky;
+  top: 1rem;
+}
+.editor-step {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+  border: 1px solid var(--cv-line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+}
+.editor-step--on {
+  border-color: rgba(15, 118, 110, 0.45);
+  background: rgba(15, 118, 110, 0.06);
+}
+.editor-step__index {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #eef2f4;
+  color: var(--cv-ink);
+}
+.editor-step--on .editor-step__index {
+  background: var(--cv-accent);
+  color: #fff;
+}
+.editor-step__title {
+  display: block;
+  font-weight: 650;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  color: var(--cv-ink);
+}
+.editor-step__hint {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--cv-muted);
+}
+@media (max-width: 960px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+  .editor-nav {
+    position: static;
+  }
 }
 </style>
