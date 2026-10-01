@@ -1,0 +1,7 @@
+[[edge_functions]]
+  function = "api-proxy"
+  path = "/api/*"
+
+[[edge_functions]]
+  function = "api-proxy"
+  path = "/uploads/*"

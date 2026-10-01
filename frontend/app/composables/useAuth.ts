@@ -1,7 +1,7 @@
 import type { AuthResponse, AuthUser } from '~/types/cv'
 
 export function useAuth() {
-  const config = useRuntimeConfig()
+  const apiBase = useApiBase()
   const token = useCookie<string | null>('cv_token', {
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7,
@@ -11,7 +11,7 @@ export function useAuth() {
   const isAuthenticated = computed(() => Boolean(token.value))
 
   async function login(email: string, password: string) {
-    const data = await $fetch<AuthResponse>(`${config.public.apiBase}/auth/login`, {
+    const data = await $fetch<AuthResponse>(`${apiBase}/auth/login`, {
       method: 'POST',
       body: { email, password },
     })
@@ -25,7 +25,7 @@ export function useAuth() {
     username: string
     password: string
   }) {
-    const data = await $fetch<AuthResponse>(`${config.public.apiBase}/auth/register`, {
+    const data = await $fetch<AuthResponse>(`${apiBase}/auth/register`, {
       method: 'POST',
       body: payload,
     })
@@ -40,7 +40,7 @@ export function useAuth() {
       return null
     }
     try {
-      user.value = await $fetch<AuthUser>(`${config.public.apiBase}/auth/me`, {
+      user.value = await $fetch<AuthUser>(`${apiBase}/auth/me`, {
         headers: { Authorization: `Bearer ${token.value}` },
       })
       return user.value

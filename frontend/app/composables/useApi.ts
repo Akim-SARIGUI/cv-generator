@@ -1,5 +1,5 @@
 export function useApi() {
-  const config = useRuntimeConfig()
+  const apiBase = useApiBase()
   const { token, logout } = useAuth()
 
   async function api<T>(
@@ -19,7 +19,7 @@ export function useApi() {
       typeof FormData !== 'undefined' && options.body instanceof FormData
 
     try {
-      return await $fetch<T>(`${config.public.apiBase}${path}`, {
+      return await $fetch<T>(`${apiBase}${path}`, {
         method: options.method || 'GET',
         body: options.body as BodyInit | Record<string, unknown> | null | undefined,
         headers,

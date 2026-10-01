@@ -10,8 +10,9 @@ export default defineNuxtConfig({
   modules: ['vuetify-nuxt-module', '@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
+    apiOrigin: '',
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:3001/api',
+      apiBase: '',
     },
   },
   vuetify: {
